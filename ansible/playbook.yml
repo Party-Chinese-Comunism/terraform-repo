@@ -16,14 +16,14 @@
           - docker-compose
         state: present
 
-    - name: Clonar o projeto da aplicação
+    - name: Clonar repositório do projeto
       git:
-        repo: https://github.com/usuario/seu-projeto.git
+        repo: https://github.com/Party-Chinese-Comunism/terraform-repo.git
         dest: /home/ubuntu/app
-        version: main
+        version: main 
         force: yes
 
     - name: Subir aplicação com Docker Compose
-      shell: docker-compose up -d
+      shell: docker compose up -d
       args:
         chdir: /home/ubuntu/app
