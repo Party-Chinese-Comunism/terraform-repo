@@ -1,0 +1,53 @@
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"   
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - front_network
+    restart: always
+
+  frontend:
+    image: dogogh1/frontend-blogpost:latest
+    container_name: frontend
+    networks:
+      - front_network
+
+  backend:
+    image: dogogh1/blog-backend:latest
+    container_name: backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/blogdb
+    depends_on:
+      - postgres
+    networks:
+      - front_network
+      - banco_network
+
+  postgres:
+    image: postgres:latest  # Nome correto da imagem oficial
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: blogdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Caminho oficial
+      - ./db-init:/docker-entrypoint-initdb.d  # Scripts SQL
+    networks:
+      - banco_network
+
+volumes:
+  postgres_data:  # Volume único para PostgreSQL
+
+networks:
+  banco_network:
+    driver: bridge
+  front_network:
+    driver: bridge
