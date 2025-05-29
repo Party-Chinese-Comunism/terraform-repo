@@ -1,5 +1,5 @@
 ---
-- name: Configurar e deploy da aplicação
+- name: Configurar VM e fazer deploy da aplicação
   hosts: web
   become: true
 
@@ -9,7 +9,7 @@
         update_cache: yes
         upgrade: yes
 
-    - name: Instalar pacotes essenciais
+    - name: Instalar Docker e Docker Compose
       apt:
         name:
           - docker.io
@@ -20,10 +20,10 @@
       git:
         repo: https://github.com/Party-Chinese-Comunism/terraform-repo.git
         dest: /home/ubuntu/app
-        version: main 
+        version: main
         force: yes
 
-    - name: Subir aplicação com Docker Compose
-      shell: docker compose up -d
+    - name: Subir containers com Docker Compose
+      shell: docker-compose up -d
       args:
         chdir: /home/ubuntu/app

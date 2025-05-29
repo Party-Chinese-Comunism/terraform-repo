@@ -24,6 +24,5 @@ variable "image" {
 }
 
 variable "public_key_path" {
-  description = "Caminho para sua chave SSH pública"
-  default     = "~/.ssh/id_rsa.pub"
+  default = "C:/Users/FireW/.ssh/id_rsa.pub"
 }
