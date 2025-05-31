@@ -8,6 +8,6 @@ terra-461323-6f30c61d88f0.json
 
 *.bak
 *.log
-
+.DS_Store
 
 *.pem
