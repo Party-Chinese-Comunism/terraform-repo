@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - lucas
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -13,21 +14,22 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.0.0"
+
+      - name: Create GCP credentials file
+        run: |
+          mkdir -p ~/.config/gcloud
+          echo '${{ secrets.GCP_CREDENTIALS }}' > ~/.config/gcloud/credentials.json
+          # Verifica se o JSON é válido
+          jq . ~/.config/gcloud/credentials.json
+          chmod 600 ~/.config/gcloud/credentials.json
 
       - name: Initialize Terraform
         run: |
           cd terraform
           terraform init
-
-      - name: Create GCP credentials file
-        run: |
-          mkdir -p ~/gcp_credentials
-          echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials/credentials.json
-          cat ~/gcp_credentials/credentials.json  
-          chmod 600 ~/gcp_credentials/credentials.json
 
       - name: Terraform Apply and get VM IP
         id: apply
@@ -36,25 +38,27 @@ jobs:
           terraform apply -auto-approve \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=~/gcp_credentials/credentials.json"
-          echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
+            -var "zone=${{ secrets.GCP_ZONE }}"
+          terraform output -raw vm_ip > ../vm_ip.txt
+          echo "VM_IP=$(cat ../vm_ip.txt)" >> $GITHUB_OUTPUT
 
       - name: Update Ansible inventory with the new VM IP
         run: |
           NEW_VM_IP=$(cat vm_ip.txt)
+          echo "Updating inventory with IP: $NEW_VM_IP"
           cd ansible
           sed -i "s/<ip_da_vm>/$NEW_VM_IP/" inventory.ini
+          cat inventory.ini
 
-      - name: Set up Ansible
+      - name: Set up SSH
         run: |
-          sudo apt-get install -y ansible
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          # Adiciona o host à known_hosts para evitar prompt
+          ssh-keyscan $(cat vm_ip.txt) >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
         run: |
           cd ansible
-          ansible-playbook -i inventory.ini playbook.yml
-        env:
-          ANSIBLE_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ansible-playbook -i inventory.ini playbook.yml --user=YOUR_SSH_USER --key-file=~/.ssh/id_rsa
