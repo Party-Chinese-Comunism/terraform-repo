@@ -34,6 +34,7 @@ jobs:
         id: apply
         run: |
           cd terraform
+          cat /home/runner/gcp_credentials/credentials.json
           terraform apply -auto-approve \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
