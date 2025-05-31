@@ -3,14 +3,14 @@ name: CI/CD Pipeline for Terraform and Ansible
 on:
   push:
     branches:
-      - lucas-test 
+      - lucas  
 
 jobs:
   setup:
     runs-on: ubuntu-latest
 
     steps:
- 
+     
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -18,31 +18,37 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.12.1
+          terraform_version: "1.12.1"  
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }} 
-
-   
       - name: Initialize Terraform
-        run: terraform init
+        run: |
+          cd terraform  # Muda para a pasta Terraform
+          terraform init
+
+      - name: Terraform Apply and get VM IP
+        id: apply
+        run: |
+          cd terraform  # Muda para a pasta Terraform
+          terraform apply -auto-approve
+          echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
 
 
-      - name: Terraform Plan
-        run: terraform plan
+      - name: Update Ansible inventory with the new VM IP
+        run: |
+          NEW_VM_IP=$(cat vm_ip.txt)
+          cd ansible  # Muda para a pasta do Ansible
+          sed -i "s/<ip_da_vm>/$NEW_VM_IP/" inventory.ini
 
- 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-
-
+  
       - name: Set up Ansible
-        run: sudo apt-get install -y ansible
+        run: |
+          sudo apt-get install -y ansible
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
+          cd ansible  # Muda para a pasta do Ansible
+          ansible-playbook -i inventory.ini playbook.yml
         env:
-          ANSIBLE_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  
+          ANSIBLE_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
