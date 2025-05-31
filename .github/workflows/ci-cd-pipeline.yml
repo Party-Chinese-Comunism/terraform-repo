@@ -25,7 +25,7 @@ jobs:
 
       - name: Set GOOGLE_APPLICATION_CREDENTIALS environment variable
         run: |
-          # Grava o conteúdo do Secret no arquivo JSON temporário
+          # Grava o conteúdo do Secret diretamente no ambiente como uma variável
           echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp_credentials.json
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcp_credentials.json
