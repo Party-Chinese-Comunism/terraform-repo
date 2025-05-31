@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - lucas
-
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -27,11 +26,12 @@ jobs:
         id: apply
         run: |
           cd terraform
+          echo "${{ secrets.GCP_CREDENTIALS_FILE }}" > ~/gcp_credentials.json
           terraform apply -auto-approve \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=${{ secrets.GCP_CREDENTIALS_FILE }}"
+            -var "credentials_file_path=~/gcp_credentials.json"
           echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
