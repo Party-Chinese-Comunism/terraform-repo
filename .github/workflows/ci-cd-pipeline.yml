@@ -22,11 +22,15 @@ jobs:
           cd terraform
           terraform init
 
+      - name: Create GCP credentials file
+        run: |
+          echo "${{ secrets.GCP_CREDENTIALS_FILE }}" > ~/gcp_credentials.json
+          chmod 600 ~/gcp_credentials.json
+
       - name: Terraform Apply and get VM IP
         id: apply
         run: |
           cd terraform
-          echo "${{ secrets.GCP_CREDENTIALS_FILE }}" > ~/gcp_credentials.json
           terraform apply -auto-approve \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \

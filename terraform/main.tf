@@ -1,9 +1,10 @@
 provider "google" {
-  credentials = file("/Users/lucasquadros/Desktop/terra/terraform-repo/terraform/terra-461323-6f30c61d88f0.json")  # Caminho para a chave JSON da conta de serviço
-  project     = var.project_id  
-  region      = var.region      
-  zone        = var.zone        
+  credentials = file(var.credentials_file_path)  
+  project     = var.project_id
+  region      = var.region
+  zone        = var.zone
 }
+
 
 resource "google_compute_instance" "vm_instance" {
   name         = "dev-vm"
