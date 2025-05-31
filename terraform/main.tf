@@ -1,31 +1,29 @@
 provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
+  credentials = file("/Users/lucasquadros/Desktop/terra/terraform-repo/terraform/terra-461323-6f30c61d88f0.json")  # Caminho para a chave JSON da conta de serviço
+  project     = var.project_id  
+  region      = var.region      
+  zone        = var.zone        
 }
 
 resource "google_compute_instance" "vm_instance" {
   name         = "dev-vm"
-  machine_type = var.machine_type
-  zone         = var.zone
+  machine_type = var.machine_type  
+  zone         = var.zone         
 
   boot_disk {
     initialize_params {
-      image = var.image
-      size  = var.disk_size
+      image = var.image         
+      size  = var.disk_size       
     }
   }
 
   network_interface {
     network = "default"
-
-    access_config {
-      // Libera IP público
-    }
+    access_config {}
   }
 
   metadata = {
-    ssh-keys = "ubuntu:${file(var.public_key_path)}"
+    ssh-keys = "ubuntu:${file(var.public_key_path)}"  
   }
 
   tags = ["ssh", "app"]

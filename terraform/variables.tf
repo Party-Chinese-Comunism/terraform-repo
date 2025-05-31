@@ -1,28 +1,34 @@
 variable "project_id" {
+  description = "O ID do projeto GCP"
   type        = string
-  description = "ID do projeto GCP"
 }
 
 variable "region" {
-  default = "us-central1"
+  description = "A região do GCP"
+  default     = "us-central1"
 }
 
 variable "zone" {
-  default = "us-central1-a"
+  description = "A zona do GCP"
+  default     = "us-central1-a"
 }
 
 variable "machine_type" {
-  default = "e2-medium"
-}
-
-variable "disk_size" {
-  default = 20
+  description = "Tipo da máquina para a instância"
+  default     = "e2-medium"
 }
 
 variable "image" {
-  default = "ubuntu-os-cloud/ubuntu-2204-lts"
+  description = "Imagem do sistema operacional"
+  default     = "ubuntu-os-cloud/ubuntu-2204-lts"
+}
+
+variable "disk_size" {
+  description = "Tamanho do disco da instância"
+  default     = 20
 }
 
 variable "public_key_path" {
-  default = "C:/Users/FireW/.ssh/id_rsa.pub"
+  description = "Caminho para a chave pública SSH"
+  default     = "~/.ssh/id_rsa.pub"  
 }
