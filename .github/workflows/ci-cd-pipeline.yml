@@ -1,9 +1,3 @@
-name: CI/CD Pipeline for Terraform and Ansible
-
-on:
-  push:
-    branches:
-      - lucas
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -25,8 +19,14 @@ jobs:
       - name: Create GCP credentials file
         run: |
           mkdir -p ~/gcp_credentials
+          # Grava o conteúdo do Secret no arquivo JSON
           echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials/credentials.json
-          cat ~/gcp_credentials/credentials.json  
+          
+          # Verifica o conteúdo do arquivo de credenciais nos logs
+          echo "Contents of the credentials file:"
+          cat ~/gcp_credentials/credentials.json
+
+          # Define as permissões do arquivo de credenciais
           chmod 600 ~/gcp_credentials/credentials.json
 
       - name: Terraform Apply and get VM IP
