@@ -24,7 +24,8 @@ jobs:
 
       - name: Create GCP credentials file
         run: |
-          echo "${{ secrets.GCP_CREDENTIALS_FILE }}" > ~/gcp_credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials.json
+          cat ~/gcp_credentials.json  # Verifique nos logs se o conteúdo JSON está correto
           chmod 600 ~/gcp_credentials.json
 
       - name: Terraform Apply and get VM IP
