@@ -1,3 +1,9 @@
+name: CI/CD Pipeline for Terraform and Ansible
+
+on:
+  push:
+    branches:
+      - lucas
 jobs:
   setup:
     runs-on: ubuntu-latest
