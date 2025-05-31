@@ -24,9 +24,10 @@ jobs:
 
       - name: Create GCP credentials file
         run: |
-          echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials.json
-          cat ~/gcp_credentials.json  # Verifique nos logs se o conteúdo JSON está correto
-          chmod 600 ~/gcp_credentials.json
+          mkdir -p ~/gcp_credentials
+          echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials/credentials.json
+          cat ~/gcp_credentials/credentials.json  
+          chmod 600 ~/gcp_credentials/credentials.json
 
       - name: Terraform Apply and get VM IP
         id: apply
@@ -36,7 +37,7 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=~/gcp_credentials.json"
+            -var "credentials_file_path=~/gcp_credentials/credentials.json"
           echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
