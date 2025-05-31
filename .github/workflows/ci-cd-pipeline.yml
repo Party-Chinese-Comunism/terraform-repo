@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - lucas
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -15,7 +16,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: "1.0.0"
+          terraform_version: "1.12.1"
 
       - name: Initialize Terraform
         run: |
@@ -24,16 +25,18 @@ jobs:
 
       - name: Create GCP credentials file
         run: |
-          mkdir -p ~/gcp_credentials
+          # Cria o diretório de credenciais com o caminho absoluto
+          mkdir -p $HOME/gcp_credentials
+
           # Grava o conteúdo do Secret no arquivo JSON
-          echo "${{ secrets.GCP_CREDENTIALS }}" > ~/gcp_credentials/credentials.json
-          
+          echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp_credentials/credentials.json
+
           # Verifica o conteúdo do arquivo de credenciais nos logs
           echo "Contents of the credentials file:"
-          cat ~/gcp_credentials/credentials.json
+          cat $HOME/gcp_credentials/credentials.json
 
           # Define as permissões do arquivo de credenciais
-          chmod 600 ~/gcp_credentials/credentials.json
+          chmod 600 $HOME/gcp_credentials/credentials.json
 
       - name: Terraform Apply and get VM IP
         id: apply
@@ -43,7 +46,7 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=~/gcp_credentials/credentials.json"
+            -var "credentials_file_path=$HOME/gcp_credentials/credentials.json"
           echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
