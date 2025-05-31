@@ -25,9 +25,8 @@ jobs:
 
       - name: Set GOOGLE_APPLICATION_CREDENTIALS environment variable
         run: |
-          # Define a variable for the credentials directly in the environment
+          # Grava o conteúdo do Secret no arquivo JSON temporário
           echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp_credentials.json
-
         env:
           GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcp_credentials.json
 
@@ -39,7 +38,6 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}"
-          echo "VM IP is $(terraform output -raw vm_ip)" > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
         run: |
