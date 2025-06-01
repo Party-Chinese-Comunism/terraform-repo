@@ -41,6 +41,8 @@ jobs:
       - name: Import existing Firewall
         run: |
           cd terraform
+          # Definindo a variável de ambiente para autenticação GCP
+          export GOOGLE_APPLICATION_CREDENTIALS="/home/runner/gcp_credentials/credentials.json"
           terraform import google_compute_firewall.allow_ssh_http projects/${{ secrets.GCP_PROJECT_ID }}/global/firewalls/allow-ssh-http
 
       - name: Terraform Apply and get VM IP
