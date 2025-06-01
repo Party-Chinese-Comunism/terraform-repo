@@ -60,8 +60,9 @@ jobs:
         run: |
           NEW_VM_IP=$(cd terraform && terraform output -raw vm_ip | tr -d '\r')
           echo "Novo IP da VM: $NEW_VM_IP"
-          sed -i "s|<ip_da_vm>|$NEW_VM_IP|" ansible/inventory.ini
+          sed -i "s@<ip_da_vm>@$NEW_VM_IP@" ansible/inventory.ini
           cat ansible/inventory.ini
+
 
       - name: Set up Ansible and SSH
         run: |
