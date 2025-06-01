@@ -2,7 +2,8 @@
 - name: Configurar VM e fazer deploy da aplicação
   hosts: all
   become: true
-
+  vars:
+    ansible_ssh_private_key_file: "/home/ubuntu/.ssh/id_rsa" 
   tasks:
     - name: Atualizar pacotes
       apt:
