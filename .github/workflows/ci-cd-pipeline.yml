@@ -64,6 +64,8 @@ jobs:
           cat ansible/inventory.ini
 
 
+
+
       - name: Set up Ansible and SSH
         run: |
           sudo apt-get update
