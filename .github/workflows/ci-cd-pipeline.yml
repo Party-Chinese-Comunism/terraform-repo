@@ -37,16 +37,7 @@ jobs:
           cd terraform
           terraform init
           
-      - name: Terraform Destroy (opcional para ambiente limpo)
-        run: |
-          cd terraform
-          terraform destroy -auto-approve \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            -var "public_key_path=~/.ssh/id_rsa.pub"
-
+      
       - name: Terraform Apply and get VM IP
         id: apply
         run: |
