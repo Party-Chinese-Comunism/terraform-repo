@@ -71,32 +71,33 @@ jobs:
       - name: Set up Ansible and SSH
         run: |
           set -e
-
+      
           # Atualizar repositórios
           sudo apt-get clean
           sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
-
+      
           # Instalar Ansible e sshpass
           set +e
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing
           EXIT_CODE=$?
           set -e
-
+      
           if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
             echo "Erro grave na instalação (código $EXIT_CODE)"
             exit "$EXIT_CODE"
           fi
-
+      
           if ! command -v ansible >/dev/null; then
             echo "Erro: Ansible não foi instalado corretamente"
             exit 1
           fi
-
+      
           # Adicionar IP da VM ao known_hosts
           ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
-
+      
           # Forçar sucesso final da etapa
           true
+
 
       # Executar o playbook do Ansible
       - name: Run Ansible Playbook without inventory file
