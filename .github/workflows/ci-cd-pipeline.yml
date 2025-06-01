@@ -8,13 +8,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      NEW_VM_IP: 34.67.220.19  # IP fixo definido manualmente
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Configurar credenciais do GCP a partir do base64
       - name: Set up GCP credentials (from base64)
         run: |
           mkdir -p /home/runner/gcp_credentials
@@ -22,46 +21,53 @@ jobs:
           chmod 600 /home/runner/gcp_credentials/credentials.json
           head -n 5 /home/runner/gcp_credentials/credentials.json
 
+      # Configurar chaves SSH
       - name: Set up SSH keys
         run: |
           mkdir -p ~/.ssh
+          # Configurar a chave privada
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
+          
+          # Configurar a chave pública
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
           chmod 644 ~/.ssh/id_rsa.pub
 
-      # - name: Set up Terraform
-      #   uses: hashicorp/setup-terraform@v2
-      #   with:
-      #     terraform_version: 1.12.1
+      # Passos relacionados ao Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.12.1
 
-      # - name: Initialize Terraform
-      #   run: |
-      #     cd terraform
-      #     terraform init
+      - name: Initialize Terraform
+        run: |
+          cd terraform
+          terraform init
 
-      # - name: Terraform Plan
-      #   run: |
-      #     cd terraform
-      #     terraform plan -out=planfile \
-      #       -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-      #       -var "region=${{ secrets.GCP_REGION }}" \
-      #       -var "zone=${{ secrets.GCP_ZONE }}" \
-      #       -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-      #       -var "public_key_path=~/.ssh/id_rsa.pub"
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan -out=planfile \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
+            -var "public_key_path=~/.ssh/id_rsa.pub"
 
-      # - name: Terraform Apply and get VM IP
-      #   id: apply
-      #   run: |
-      #     cd terraform
-      #     terraform apply -auto-approve planfile
-      #     terraform output -raw vm_ip > vm_ip.txt
+      - name: Terraform Apply and get VM IP
+        id: apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve planfile
+          terraform output -raw vm_ip > vm_ip.txt
 
-      # - name: Update Ansible playbook with the new VM IP
-      #   run: |
-      #     NEW_VM_IP=$(cd terraform && terraform output -raw vm_ip | tr -d '\r')
-      #     echo "Novo IP da VM: $NEW_VM_IP"
+      # Atualizar variáveis de IP no Ansible
+      - name: Update Ansible playbook with the new VM IP
+        run: |
+          NEW_VM_IP=$(cat terraform/vm_ip.txt)
+          echo "Novo IP da VM: $NEW_VM_IP"
 
+      # Configuração do Ansible e SSH
       - name: Set up Ansible and SSH
         run: |
           set -e
@@ -92,6 +98,7 @@ jobs:
           # Forçar sucesso final da etapa
           true
 
+      # Executar o playbook do Ansible
       - name: Run Ansible Playbook without inventory file
         run: |
           cd ansible
