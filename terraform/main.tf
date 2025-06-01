@@ -1,45 +1,34 @@
 provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
+  credentials = file(var.credentials_file)
+  project     = var.project_id
+  region      = var.region
+  zone        = var.zone
 }
 
 resource "google_compute_instance" "vm_instance" {
-  name         = "dev-vm"
-  machine_type = var.machine_type
+  name         = "vm-${var.env}"
+  machine_type = "e2-medium"
   zone         = var.zone
 
   boot_disk {
     initialize_params {
-      image = var.image
-      size  = var.disk_size
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
     }
   }
 
   network_interface {
-    network = "default"
-
-    access_config {
-      // Libera IP público
-    }
+    network       = "default"
+    access_config {}
   }
 
-  metadata = {
-    ssh-keys = "ubuntu:${file(var.public_key_path)}"
-  }
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+    sudo apt update && sudo apt install -y docker.io
+  EOT
 
-  tags = ["ssh", "app"]
+  tags = ["http-server", "https-server"]
 }
 
-resource "google_compute_firewall" "allow_ssh_http" {
-  name    = "allow-ssh-http"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "80", "3000", "8000"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["ssh", "app"]
+output "public_ip" {
+  value = google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip
 }
