@@ -6,24 +6,24 @@ on:
       - lucas
 
 jobs:
-  setup:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # Atualizado para versão mais recente
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2  # Versão mais recente
-        with:
-          terraform_version: "1.12.1"
+        uses: actions/checkout@v3
 
       - name: Set up GCP credentials
         run: |
           mkdir -p /home/runner/gcp_credentials
           echo "${{ secrets.GCP_CREDENTIALS }}" > /home/runner/gcp_credentials/credentials.json
-          chmod 644 /home/runner/gcp_credentials/credentials.json
-          ls -la /home/runner/gcp_credentials/  # Verificação
+          chmod 600 /home/runner/gcp_credentials/credentials.json
+          ls -la /home/runner/gcp_credentials/
+          head -n 5 /home/runner/gcp_credentials/credentials.json  # Verificação leve
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5  # ou a versão que você estiver usando
 
       - name: Initialize Terraform
         run: |
@@ -40,7 +40,6 @@ jobs:
             -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
           
-          # Captura o IP da VM (ajuste conforme sua output do Terraform)
           terraform output -raw vm_ip > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
@@ -49,18 +48,17 @@ jobs:
           echo "Novo IP da VM: $NEW_VM_IP"
           cd ansible
           sed -i "s/<ip_da_vm>/$NEW_VM_IP/" inventory.ini
-          cat inventory.ini  # Para verificação no log
+          cat inventory.ini
 
       - name: Set up Ansible and SSH
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible sshpass
-          
+
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Adiciona o host ao known_hosts para evitar prompt
+
           ssh-keyscan -H $(cat terraform/vm_ip.txt) >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
