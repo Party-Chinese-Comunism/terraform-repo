@@ -41,4 +41,13 @@ resource "google_compute_firewall" "allow_ssh_http" {
 
   source_ranges = ["0.0.0.0/0"]
   target_tags   = ["ssh", "app"]
+
+  lifecycle {
+    ignore_changes = [
+      source_ranges,
+      target_tags,
+      allow,
+    ]
+  }
 }
+
