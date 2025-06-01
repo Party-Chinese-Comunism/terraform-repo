@@ -30,24 +30,24 @@ resource "google_compute_instance" "vm_instance" {
   tags = ["ssh", "app"]
 }
 
-resource "google_compute_firewall" "allow_ssh_http" {
-  name    = "allow-ssh-http"
-  network = "default"
+#resource "google_compute_firewall" "allow_ssh_http" {
+ # name    = "allow-ssh-http"
+#  network = "default"
 
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "80", "3000", "8000"]
-  }
+#  allow {
+#    protocol = "tcp"
+#    ports    = ["22", "80", "3000", "8000"]
+#  }
 
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["ssh", "app"]
+#  source_ranges = ["0.0.0.0/0"]
+#  target_tags   = ["ssh", "app"]
 
-  lifecycle {
-    ignore_changes = [
-      source_ranges,
-      target_tags,
-      allow,
-    ]
-  }
-}
+#  lifecycle {
+#    ignore_changes = [
+#      source_ranges,
+#      target_tags,
+#      allow,
+#    ]
+#  }
+#}
 
