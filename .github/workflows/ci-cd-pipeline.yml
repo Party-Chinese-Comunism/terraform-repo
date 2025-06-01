@@ -37,18 +37,21 @@ jobs:
           cd terraform
           terraform init
           
-      
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan -out=planfile \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
+            -var "public_key_path=~/.ssh/id_rsa.pub"
+          
       - name: Terraform Apply and get VM IP
         id: apply
         run: |
           cd terraform
-          terraform apply -auto-approve \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \ 
-            -var "public_key_path=~/.ssh/id_rsa.pub"
-          
+          terraform apply -auto-approve "planfile"
           terraform output -raw vm_ip > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
@@ -64,7 +67,6 @@ jobs:
           sudo apt-get install -y ansible sshpass
 
           # ssh já foi configurado no passo anterior
-
           ssh-keyscan -H $(cat terraform/vm_ip.txt) >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
