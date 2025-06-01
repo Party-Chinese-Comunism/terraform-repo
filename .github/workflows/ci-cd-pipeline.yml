@@ -63,23 +63,25 @@ jobs:
 
       - name: Set up Ansible and SSH
         run: |
+          # Impedir que 'needrestart' cause falha ao tentar reiniciar serviços
+          echo 'exit 0' | sudo tee /usr/sbin/policy-rc.d > /dev/null
+          sudo chmod +x /usr/sbin/policy-rc.d
+      
           # Atualizar repositórios
           sudo apt-get clean
           sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
       
-
-          set -e
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing || echo "Aviso ignorado: erro no pós-instalação"
+          # Instalar Ansible e sshpass
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing
       
-    
+          # Verificar se ansible está instalado corretamente
           if ! command -v ansible >/dev/null; then
             echo "Erro: Ansible não foi instalado corretamente"
             exit 1
           fi
-      
+
           ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
       
-
 
       - name: Run Ansible Playbook without inventory file
         run: |
