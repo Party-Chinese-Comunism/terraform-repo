@@ -36,22 +36,18 @@ jobs:
         run: |
           cd terraform
           terraform init
-          
-      - name: Terraform Plan
+
+      # Passo para importar o firewall existente
+      - name: Import existing Firewall
         run: |
           cd terraform
-          terraform plan -out=planfile \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            -var "public_key_path=~/.ssh/id_rsa.pub"
-          
+          terraform import google_compute_firewall.allow_ssh_http projects/${{ secrets.GCP_PROJECT_ID }}/global/firewalls/allow-ssh-http
+
       - name: Terraform Apply and get VM IP
         id: apply
         run: |
           cd terraform
-          terraform apply -auto-approve "planfile"
+          terraform apply -auto-approve planfile
           terraform output -raw vm_ip > vm_ip.txt
 
       - name: Update Ansible inventory with the new VM IP
