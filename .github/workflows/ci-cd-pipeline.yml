@@ -63,15 +63,15 @@ jobs:
 
       - name: Set up Ansible and SSH
         run: |
-          # Limpar o cache do APT e atualizar os pacotes
+         
           sudo apt-get clean
           sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
+      
 
-          # Instalar o Ansible e sshpass
-          sudo apt-get install -y ansible sshpass --fix-missing
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing || true
 
-          # Configurar o SSH já feito no passo anterior
           ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
+
 
       - name: Run Ansible Playbook without inventory file
         run: |
