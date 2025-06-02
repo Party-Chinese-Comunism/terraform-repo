@@ -48,8 +48,8 @@ jobs:
       - name: Terraform Apply and extract VM IP
         run: |
           cd terraform
-          terraform apply -auto-approve planfile
-          terraform output -raw vm_ip > vm_ip.txt
+          terraform apply -auto-approve planfile > /dev/null
+          terraform output -raw vm_ip | tr -d '\r' > ../vm_ip.txt
 
       - name: Debug IP da VM
         run: |
