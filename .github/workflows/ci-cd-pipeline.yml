@@ -47,18 +47,15 @@ jobs:
             -var "public_key_path=/home/runner/.ssh/id_rsa.pub"
             
       - name: Terraform Apply and extract VM IP
-        id: terraform-apply
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-          
-          # Capturar a saída completa e extrair apenas o IP
-          TERRAFORM_OUTPUT=$(terraform output vm_ip)
-          VM_IP=$(echo "$TERRAFORM_OUTPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
-          
-          # Exportar para variável de ambiente do job
+
+          VM_IP=$(terraform output -raw vm_ip)
+          echo "VM_IP extraído: $VM_IP"
+
           echo "VM_IP=$VM_IP" >> $GITHUB_ENV
-          echo "IP da VM extraído: $VM_IP"
+
           
       - name: Debug IP da VM
         run: echo "IP da VM é $VM_IP"
