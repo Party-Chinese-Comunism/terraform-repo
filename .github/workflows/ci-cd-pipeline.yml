@@ -49,19 +49,19 @@ jobs:
           cd terraform
           terraform apply -auto-approve planfile
           
-          # Extrai o endereço IP
+          # Extrai o endereço IP da VM
           VM_IP=$(terraform output -raw vm_ip | head -1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
           echo "IP limpo: $VM_IP"
           echo "$VM_IP" > ../vm_ip.txt
-
+      
       - name: Confirmar conteúdo de vm_ip.txt
         run: |
           echo "Verificando existência e conteúdo do arquivo vm_ip.txt..."
           ls -l vm_ip.txt
           echo "Conteúdo:"
           cat vm_ip.txt
-
-      - name: Aguardar SSH da VM ficar disponível
+      
+      - name: Aguardar SSH da VM ficar disponível (Ajustar a espera)
         run: |
           VM_IP=$(cat vm_ip.txt)
           for i in {1..60}; do
@@ -70,8 +70,9 @@ jobs:
               break
             fi
             echo "Aguardando SSH em $VM_IP:22... ($i/60)"
-            sleep 10
+            sleep 10  # Aguardar 10 segundos entre as tentativas
           done
+
 
       - name: Instalar Ansible e preparar acesso SSH
         run: |
