@@ -31,8 +31,6 @@ jobs:
           
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
           
       - name: Initialize Terraform
         run: |
@@ -69,6 +67,8 @@ jobs:
   ansible-configure:
     runs-on: ubuntu-latest
     needs: terraform-deploy
+    outputs:
+      deployment_status: ${{ steps.ansible-run.outputs.status }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -110,9 +110,16 @@ jobs:
           ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
           
       - name: Run Ansible Playbook with SSH Key
+        id: ansible-run
+        env:
+          VM_IP: ${{ needs.terraform-deploy.outputs.vm_ip }}
         run: |
           cd ansible
           ansible-playbook playbook.yml \
             --user=ubuntu \
             --private-key=~/.ssh/id_rsa \
-            -i "${{ needs.terraform-deploy.outputs.vm_ip }},"
+            -i "$VM_IP,"
+          
+          # Exportar status do deployment
+          echo "status=success" >> "$GITHUB_OUTPUT"
+          echo "Ansible playbook executado com sucesso!"
