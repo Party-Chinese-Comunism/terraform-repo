@@ -56,7 +56,7 @@ jobs:
           echo "NEW_VM_IP=$(terraform output -raw vm_ip | tr -d '\r')" >> $GITHUB_ENV
 
       - name: Debug IP da VM
-        run: echo "IP da VM é: $NEW_VM_IP"
+        run: echo "IP da VM é $NEW_VM_IP"
 
       - name: Set up Ansible and SSH
         run: |
