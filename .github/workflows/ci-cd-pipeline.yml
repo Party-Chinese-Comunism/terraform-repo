@@ -3,9 +3,12 @@ on:
   push:
     branches:
       - lucas
+
 jobs:
-  deploy:
+  terraform-deploy:
     runs-on: ubuntu-latest
+    outputs:
+      vm_ip: ${{ steps.apply.outputs.vm_ip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -55,18 +58,36 @@ jobs:
           TERRAFORM_OUTPUT=$(terraform output vm_ip)
           NEW_VM_IP=$(echo "$TERRAFORM_OUTPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
           
-          # Usar GITHUB_OUTPUT em vez de GITHUB_ENV
+          # Usar GITHUB_OUTPUT para disponibilizar para outros jobs
           echo "vm_ip=$NEW_VM_IP" >> $GITHUB_OUTPUT
           echo "Novo IP da VM: $NEW_VM_IP"
           
       - name: Debug IP da VM
         run: echo "IP da VM é ${{ steps.apply.outputs.vm_ip }}"
+
+  ansible-configure:
+    runs-on: ubuntu-latest
+    needs: terraform-deploy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Set up SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          chmod 600 ~/.ssh/id_rsa
+          chmod 644 ~/.ssh/id_rsa.pub
+          
+      - name: Debug IP da VM recebido
+        run: echo "IP da VM recebido do job anterior: ${{ needs.terraform-deploy.outputs.vm_ip }}"
         
       - name: Set up Ansible and SSH
         run: |
           set -e
           
-          NEW_VM_IP="${{ steps.apply.outputs.vm_ip }}"
+          NEW_VM_IP="${{ needs.terraform-deploy.outputs.vm_ip }}"
           
           # Verificar se temos um IP válido
           if [[ -z "$NEW_VM_IP" ]] || [[ ! "$NEW_VM_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -93,4 +114,4 @@ jobs:
           ansible-playbook playbook.yml \
             --user=ubuntu \
             --private-key=~/.ssh/id_rsa \
-            -i "${{ steps.apply.outputs.vm_ip }},"
+            -i "${{ needs.terraform-deploy.outputs.vm_ip }},"
