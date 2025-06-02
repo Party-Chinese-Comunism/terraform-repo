@@ -8,8 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      NEW_VM_IP: 34.69.199.34 
+    #env:
+      #NEW_VM_IP: 34.69.199.34 
 
     steps:
       - name: Checkout repository
@@ -30,37 +30,37 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 644 ~/.ssh/id_rsa.pub
 
-      # - name: Set up Terraform
-      #   uses: hashicorp/setup-terraform@v2
-      #   with:
-      #     terraform_version: 1.12.1
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.12.1
 
-      # - name: Initialize Terraform
-      #   run: |
-      #     cd terraform
-      #     terraform init
+      - name: Initialize Terraform
+        run: |
+          cd terraform
+          terraform init
 
-      # - name: Terraform Plan
-      #   run: |
-      #     cd terraform
-      #     terraform plan -out=planfile \
-      #       -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-      #       -var "region=${{ secrets.GCP_REGION }}" \
-      #       -var "zone=${{ secrets.GCP_ZONE }}" \
-      #       -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-      #       -var "public_key_path=~/.ssh/id_rsa.pub"
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan -out=planfile \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
+            -var "public_key_path=~/.ssh/id_rsa.pub"
 
-      # - name: Terraform Apply and get VM IP
-      #   id: apply
-      #   run: |
-      #     cd terraform
-      #     terraform apply -auto-approve planfile
-      #     terraform output -raw vm_ip > vm_ip.txt
+      - name: Terraform Apply and get VM IP
+        id: apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve planfile
+          terraform output -raw vm_ip > vm_ip.txt
 
-      # - name: Update Ansible playbook with the new VM IP
-      #   run: |
-      #     NEW_VM_IP=$(cd terraform && terraform output -raw vm_ip | tr -d '\r')
-      #     echo "Novo IP da VM: $NEW_VM_IP"
+      - name: Update Ansible playbook with the new VM IP
+        run: |
+          NEW_VM_IP=$(cd terraform && terraform output -raw vm_ip | tr -d '\r')
+          echo "Novo IP da VM: $NEW_VM_IP"
 
       - name: Set up Ansible and SSH
         run: |
