@@ -49,22 +49,28 @@ jobs:
           cd terraform
           terraform apply -auto-approve planfile
           terraform output -raw vm_ip | tr -d '\r' > ../vm_ip.txt
+          echo "IP salvo em vm_ip.txt:"
+          cat ../vm_ip.txt
 
-      - name: Verificar conteúdo do vm_ip.txt
+      - name: Confirmar conteúdo de vm_ip.txt
         run: |
-          echo "Conteúdo de vm_ip.txt:"
-          cat vm_ip.txt || echo "Arquivo não encontrado ou vazio"
+          echo "Verificando existência e conteúdo do arquivo vm_ip.txt..."
+          ls -l vm_ip.txt || echo "Arquivo não encontrado!"
+          cat vm_ip.txt || echo "Arquivo vazio!"
 
       - name: Debug IP da VM
         run: |
           VM_IP=$(cat vm_ip.txt | tr -d '\r')
           echo "IP da VM é: $VM_IP"
 
-      - name: Aguardar SSH da VM estar disponível
+      - name: Aguardar SSH da VM ficar disponível
         run: |
           VM_IP=$(cat vm_ip.txt | tr -d '\r')
-          for i in {1..10}; do
-            nc -zv $VM_IP 22 && echo "SSH disponível!" && break
+          for i in {1..2}; do
+            if nc -z $VM_IP 22; then
+              echo "SSH disponível em $VM_IP"
+              break
+            fi
             echo "Aguardando SSH em $VM_IP:22..."
             sleep 5
           done
@@ -79,7 +85,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
 
           echo "Adicionando $VM_IP ao known_hosts..."
-          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts || true
           true
 
       - name: Executar Ansible Playbook diretamente com IP
