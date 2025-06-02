@@ -47,7 +47,7 @@ jobs:
       - name: Terraform Apply and extract VM IP
         run: |
           cd terraform
-          terraform apply -auto-approve planfile > /dev/null
+          terraform apply -auto-approve planfile
           terraform output -raw vm_ip | tr -d '\r' > ../vm_ip.txt
 
       - name: Verificar conteúdo do vm_ip.txt
