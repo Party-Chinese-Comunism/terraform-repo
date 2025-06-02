@@ -31,7 +31,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7 # Atualize se quiser versão específica
+          terraform_version: 1.5.7
 
       - name: Initialize Terraform
         run: |
@@ -52,7 +52,7 @@ jobs:
         id: apply
         run: |
           cd terraform
-          terraform apply -auto-approve planfile
+          terraform apply -auto-approve planfile > /dev/null
           IP=$(terraform output -raw vm_ip | tr -d '\r')
           echo "NEW_VM_IP=$IP" >> $GITHUB_ENV
 
@@ -62,15 +62,12 @@ jobs:
       - name: Set up Ansible and SSH
         run: |
           set -e
-
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
-
           if ! command -v ansible >/dev/null; then
             echo "Erro: Ansible não instalado"
             exit 1
           fi
-
           # Adicionar IP ao known_hosts
           ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
 
