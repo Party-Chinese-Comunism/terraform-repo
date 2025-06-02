@@ -5,11 +5,8 @@ on:
       - lucas
 
 jobs:
-  terraform-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    # Map step output to job output
-    outputs:
-      vm_ip: ${{ steps.terraform-apply.outputs.vm_ip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,6 +28,8 @@ jobs:
           
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
           
       - name: Initialize Terraform
         run: |
@@ -57,36 +56,14 @@ jobs:
           TERRAFORM_OUTPUT=$(terraform output vm_ip)
           VM_IP=$(echo "$TERRAFORM_OUTPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
           
-          # Exportar para GITHUB_OUTPUT seguindo o padrão correto
-          echo "vm_ip=$VM_IP" >> "$GITHUB_OUTPUT"
+          # Exportar para variável de ambiente do job
+          echo "VM_IP=$VM_IP" >> $GITHUB_ENV
           echo "IP da VM extraído: $VM_IP"
           
       - name: Debug IP da VM
-        run: echo "IP da VM é ${{ steps.terraform-apply.outputs.vm_ip }}"
-
-  ansible-configure:
-    runs-on: ubuntu-latest
-    needs: terraform-deploy
-    outputs:
-      deployment_status: ${{ steps.ansible-run.outputs.status }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        
-      - name: Set up SSH keys
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
-          chmod 600 ~/.ssh/id_rsa
-          chmod 644 ~/.ssh/id_rsa.pub
-          
-      - name: Debug IP da VM recebido
-        run: echo "IP da VM recebido do job anterior ${{ needs.terraform-deploy.outputs.vm_ip }}"
+        run: echo "IP da VM é $VM_IP"
         
       - name: Set up Ansible and SSH
-        env:
-          VM_IP: ${{ needs.terraform-deploy.outputs.vm_ip }}
         run: |
           set -e
           
@@ -110,16 +87,9 @@ jobs:
           ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
           
       - name: Run Ansible Playbook with SSH Key
-        id: ansible-run
-        env:
-          VM_IP: ${{ needs.terraform-deploy.outputs.vm_ip }}
         run: |
           cd ansible
           ansible-playbook playbook.yml \
             --user=ubuntu \
             --private-key=~/.ssh/id_rsa \
             -i "$VM_IP,"
-          
-          # Exportar status do deployment
-          echo "status=success" >> "$GITHUB_OUTPUT"
-          echo "Ansible playbook executado com sucesso!"
