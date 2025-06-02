@@ -52,16 +52,14 @@ jobs:
         id: apply
         run: |
           cd terraform
-      
-          # Isolar a saída padrão de tudo o que for executado a partir daqui
-          exec 3>&1 1>/dev/null
-      
-          terraform apply -auto-approve planfile
-          IP=$(terraform output -raw vm_ip | tr -d '\r')
-      
-          # Voltar stdout para normal antes de escrever no GITHUB_ENV
-          exec 1>&3
+          
+          # Aplicar terraform silenciosamente
+          terraform apply -auto-approve planfile > /dev/null 2>&1
+          
+          # Extrair IP e definir variável de ambiente
+          IP=$(terraform output -raw vm_ip | tr -d '\r\n')
           echo "NEW_VM_IP=$IP" >> $GITHUB_ENV
+          echo "IP da VM extraído: $IP"
 
       - name: Debug IP da VM
         run: echo "IP da VM é $NEW_VM_IP"
