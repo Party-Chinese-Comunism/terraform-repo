@@ -48,9 +48,10 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-          terraform output -raw vm_ip | tr -d '\r' > ../vm_ip.txt
-          echo "IP salvo em vm_ip.txt:"
-          cat ../vm_ip.txt
+      
+          VM_IP=$(terraform output -raw vm_ip | tr -d '\r')
+          echo "$VM_IP" > ../vm_ip.txt
+          echo "IP extraído: $VM_IP"
 
       - name: Confirmar conteúdo de vm_ip.txt
         run: |
