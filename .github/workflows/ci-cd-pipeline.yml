@@ -81,7 +81,7 @@ jobs:
           chmod 644 ~/.ssh/id_rsa.pub
           
       - name: Debug IP da VM recebido
-        run: echo "IP da VM recebido do job anterior: ${{ needs.terraform-deploy.outputs.vm_ip }}"
+        run: echo "IP da VM recebido do job anterior ${{ needs.terraform-deploy.outputs.vm_ip }}"
         
       - name: Set up Ansible and SSH
         run: |
