@@ -7,8 +7,9 @@ on:
 jobs:
   terraform-deploy:
     runs-on: ubuntu-latest
+    # Map step output to job output
     outputs:
-      vm_ip: ${{ steps.apply.outputs.vm_ip }}
+      vm_ip: ${{ steps.terraform-apply.outputs.vm_ip }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -49,21 +50,21 @@ jobs:
             -var "public_key_path=/home/runner/.ssh/id_rsa.pub"
             
       - name: Terraform Apply and extract VM IP
-        id: apply
+        id: terraform-apply
         run: |
           cd terraform
           terraform apply -auto-approve planfile
           
           # Capturar a saída completa e extrair apenas o IP
           TERRAFORM_OUTPUT=$(terraform output vm_ip)
-          NEW_VM_IP=$(echo "$TERRAFORM_OUTPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+          VM_IP=$(echo "$TERRAFORM_OUTPUT" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
           
-          # Usar GITHUB_OUTPUT para disponibilizar para outros jobs
-          echo "vm_ip=$NEW_VM_IP" >> $GITHUB_OUTPUT
-          echo "Novo IP da VM: $NEW_VM_IP"
+          # Exportar para GITHUB_OUTPUT seguindo o padrão correto
+          echo "vm_ip=$VM_IP" >> "$GITHUB_OUTPUT"
+          echo "IP da VM extraído: $VM_IP"
           
       - name: Debug IP da VM
-        run: echo "IP da VM é ${{ steps.apply.outputs.vm_ip }}"
+        run: echo "IP da VM é ${{ steps.terraform-apply.outputs.vm_ip }}"
 
   ansible-configure:
     runs-on: ubuntu-latest
@@ -84,18 +85,18 @@ jobs:
         run: echo "IP da VM recebido do job anterior ${{ needs.terraform-deploy.outputs.vm_ip }}"
         
       - name: Set up Ansible and SSH
+        env:
+          VM_IP: ${{ needs.terraform-deploy.outputs.vm_ip }}
         run: |
           set -e
           
-          NEW_VM_IP="${{ needs.terraform-deploy.outputs.vm_ip }}"
-          
           # Verificar se temos um IP válido
-          if [[ -z "$NEW_VM_IP" ]] || [[ ! "$NEW_VM_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Erro: NEW_VM_IP não contém um IP válido: '$NEW_VM_IP'"
+          if [[ -z "$VM_IP" ]] || [[ ! "$VM_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Erro: VM_IP não contém um IP válido: '$VM_IP'"
             exit 1
           fi
           
-          echo "Usando IP da VM: $NEW_VM_IP"
+          echo "Usando IP da VM: $VM_IP"
           
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
@@ -105,8 +106,8 @@ jobs:
           fi
           
           # Adicionar IP ao known_hosts
-          echo "Adicionando $NEW_VM_IP ao known_hosts..."
-          ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
+          echo "Adicionando $VM_IP ao known_hosts..."
+          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
           
       - name: Run Ansible Playbook with SSH Key
         run: |
