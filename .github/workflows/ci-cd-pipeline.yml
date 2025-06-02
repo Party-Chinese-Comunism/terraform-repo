@@ -53,7 +53,8 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-          echo "NEW_VM_IP=$(terraform output -raw vm_ip | tr -d '\r')" >> $GITHUB_ENV
+          IP=$(terraform output -raw vm_ip | tr -d '\r')
+          echo "NEW_VM_IP=$IP" >> $GITHUB_ENV
 
       - name: Debug IP da VM
         run: echo "IP da VM é $NEW_VM_IP"
