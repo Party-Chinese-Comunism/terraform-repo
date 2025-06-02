@@ -17,13 +17,12 @@ jobs:
           mkdir -p /home/runner/gcp_credentials
           echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
-          head -n 5 /home/runner/gcp_credentials/credentials.json
 
       - name: Set up SSH keys
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
           chmod 644 ~/.ssh/id_rsa.pub
 
@@ -51,52 +50,39 @@ jobs:
           terraform apply -auto-approve planfile > /dev/null
           terraform output -raw vm_ip | tr -d '\r' > ../vm_ip.txt
 
+      - name: Verificar conteúdo do vm_ip.txt
+        run: |
+          echo "Conteúdo de vm_ip.txt:"
+          cat vm_ip.txt || echo "Arquivo não encontrado ou vazio"
+
       - name: Debug IP da VM
         run: |
           VM_IP=$(cat vm_ip.txt | tr -d '\r')
-          echo "IP da VM é $VM_IP"
+          echo "IP da VM é: $VM_IP"
 
-      - name: Set up Ansible and SSH
+      - name: Aguardar SSH da VM estar disponível
+        run: |
+          VM_IP=$(cat vm_ip.txt | tr -d '\r')
+          for i in {1..10}; do
+            nc -zv $VM_IP 22 && echo "SSH disponível!" && break
+            echo "Aguardando SSH em $VM_IP:22..."
+            sleep 5
+          done
+
+      - name: Instalar Ansible e preparar acesso SSH
         run: |
           set -e
 
-          if [[ ! -f vm_ip.txt ]]; then
-            echo "Erro: arquivo vm_ip.txt não encontrado."
-            exit 1
-          fi
-
           VM_IP=$(cat vm_ip.txt | tr -d '\r')
 
-          if [[ -z "$VM_IP" ]] || [[ ! "$VM_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Erro: IP da VM inválido: '$VM_IP'"
-            exit 1
-          fi
-
-          echo "IP da VM lido corretamente: $VM_IP"
-
-          sudo apt-get clean
-          sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
-
-          set +e
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing
-          EXIT_CODE=$?
-          set -e
-
-          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
-            echo "Erro grave na instalação (código $EXIT_CODE)"
-            exit "$EXIT_CODE"
-          fi
-
-          if ! command -v ansible >/dev/null; then
-            echo "Erro: Ansible não foi instalado corretamente"
-            exit 1
-          fi
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
 
           echo "Adicionando $VM_IP ao known_hosts..."
           ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
           true
 
-      - name: Run Ansible Playbook without inventory file
+      - name: Executar Ansible Playbook diretamente com IP
         run: |
           VM_IP=$(cat vm_ip.txt | tr -d '\r')
           cd ansible
