@@ -8,8 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    #env:
-      #NEW_VM_IP: 34.69.199.34 
 
     steps:
       - name: Checkout repository
@@ -33,7 +31,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.12.1
+          terraform_version: 1.5.7 # Atualize se quiser versão específica
 
       - name: Initialize Terraform
         run: |
@@ -48,51 +46,37 @@ jobs:
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            -var "public_key_path=~/.ssh/id_rsa.pub"
+            -var "public_key_path=/home/runner/.ssh/id_rsa.pub"
 
-      - name: Terraform Apply and get VM IP
+      - name: Terraform Apply and extract VM IP
         id: apply
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-          terraform output -raw vm_ip > vm_ip.txt
+          echo "NEW_VM_IP=$(terraform output -raw vm_ip | tr -d '\r')" >> $GITHUB_ENV
 
-      - name: Update Ansible playbook with the new VM IP
-        run: |
-          NEW_VM_IP=$(cd terraform && terraform output -raw vm_ip | tr -d '\r')
-          echo "Novo IP da VM: $NEW_VM_IP"
+      - name: Debug IP da VM
+        run: echo "IP da VM é: $NEW_VM_IP"
 
       - name: Set up Ansible and SSH
         run: |
           set -e
 
-          # Atualizar repositórios
-          sudo apt-get clean
-          sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
-
-          # Instalar Ansible e sshpass
-          set +e
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing
-          EXIT_CODE=$?
-          set -e
-
-          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
-            echo "Erro grave na instalação (código $EXIT_CODE)"
-            exit "$EXIT_CODE"
-          fi
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
 
           if ! command -v ansible >/dev/null; then
-            echo "Erro: Ansible não foi instalado corretamente"
+            echo "Erro: Ansible não instalado"
             exit 1
           fi
 
-          # Adicionar IP da VM ao known_hosts
+          # Adicionar IP ao known_hosts
           ssh-keyscan -H "$NEW_VM_IP" >> ~/.ssh/known_hosts
 
-          # Forçar sucesso final da etapa
-          true
-      
       - name: Run Ansible Playbook with SSH Key
         run: |
           cd ansible
-          ansible-playbook playbook.yml --user=ubuntu --private-key=~/.ssh/id_rsa -i "$NEW_VM_IP," --extra-vars "ansible_ssh_private_key_file=~/.ssh/id_rsa"
+          ansible-playbook playbook.yml \
+            --user=ubuntu \
+            --private-key=~/.ssh/id_rsa \
+            -i "$NEW_VM_IP,"
