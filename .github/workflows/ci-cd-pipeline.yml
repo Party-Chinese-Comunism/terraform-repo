@@ -48,8 +48,8 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-      
-          # Extrai apenas o endereço IP (formato IPv4)
+          
+          # Extrai o endereço IP
           VM_IP=$(terraform output -raw vm_ip | head -1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
           echo "IP limpo: $VM_IP"
           echo "$VM_IP" > ../vm_ip.txt
@@ -64,13 +64,13 @@ jobs:
       - name: Aguardar SSH da VM ficar disponível
         run: |
           VM_IP=$(cat vm_ip.txt)
-          for i in {1..20}; do
+          for i in {1..60}; do
             if nc -z $VM_IP 22; then
               echo "SSH disponível em $VM_IP"
               break
             fi
-            echo "Aguardando SSH em $VM_IP:22... ($i/20)"
-            sleep 5
+            echo "Aguardando SSH em $VM_IP:22... ($i/60)"
+            sleep 10
           done
 
       - name: Instalar Ansible e preparar acesso SSH
