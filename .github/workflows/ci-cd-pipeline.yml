@@ -53,53 +53,51 @@ jobs:
 
       - name: Debug IP da VM
         run: |
-          VM_IP=$(cat terraform/vm_ip.txt | tr -d '\r')
+          VM_IP=$(cat vm_ip.txt | tr -d '\r')
           echo "IP da VM é $VM_IP"
 
       - name: Set up Ansible and SSH
         run: |
           set -e
-      
-          # Carregar IP salvo corretamente do arquivo
-          if [[ ! -f terraform/vm_ip.txt ]]; then
-            echo "Erro: arquivo terraform/vm_ip.txt não encontrado."
+
+          if [[ ! -f vm_ip.txt ]]; then
+            echo "Erro: arquivo vm_ip.txt não encontrado."
             exit 1
           fi
-      
-          VM_IP=$(cat terraform/vm_ip.txt | tr -d '\r')
-      
+
+          VM_IP=$(cat vm_ip.txt | tr -d '\r')
+
           if [[ -z "$VM_IP" ]] || [[ ! "$VM_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Erro: IP da VM inválido: '$VM_IP'"
             exit 1
           fi
-      
+
           echo "IP da VM lido corretamente: $VM_IP"
-      
+
           sudo apt-get clean
           sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/ubuntu.list"
-      
+
           set +e
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass --fix-missing
           EXIT_CODE=$?
           set -e
-      
+
           if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 1 ]; then
             echo "Erro grave na instalação (código $EXIT_CODE)"
             exit "$EXIT_CODE"
           fi
-      
+
           if ! command -v ansible >/dev/null; then
             echo "Erro: Ansible não foi instalado corretamente"
             exit 1
           fi
-      
+
           echo "Adicionando $VM_IP ao known_hosts..."
           ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
           true
 
-
       - name: Run Ansible Playbook without inventory file
         run: |
-          VM_IP=$(cat terraform/vm_ip.txt | tr -d '\r')
+          VM_IP=$(cat vm_ip.txt | tr -d '\r')
           cd ansible
           ansible-playbook playbook.yml --user=ubuntu --private-key=~/.ssh/id_rsa -i "$VM_IP,"
