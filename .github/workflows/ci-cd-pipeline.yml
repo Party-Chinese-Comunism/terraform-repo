@@ -29,6 +29,8 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
 
       - name: Initialize Terraform
         run: |
@@ -45,22 +47,19 @@ jobs:
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
             -var "public_key_path=~/.ssh/id_rsa.pub"
 
-      - name: Terraform Apply and extract VM IP
-        id: terraform
+      - name: Terraform Apply and export VM IP
         run: |
           cd terraform
-          terraform apply -auto-approve planfile | tee ../apply.log
-
-          VM_IP=$(terraform output -raw vm_ip | tr -d '\r')
-          echo "IP extraído com sucesso: $VM_IP"
-          echo "::set-output name=vm_ip::$VM_IP"
+          terraform apply -auto-approve planfile
+          
+          IP=$(terraform output -raw vm_ip | tr -d '\r')
+          echo "IP extraído: $IP"
+          echo "VM_IP=$IP" >> $GITHUB_ENV
 
       - name: Instalar Ansible e preparar acesso SSH
         run: |
-
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
-
           echo "Adicionando $VM_IP ao known_hosts..."
           ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts || true
 
