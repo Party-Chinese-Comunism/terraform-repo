@@ -57,7 +57,6 @@ jobs:
 
       - name: Instalar Ansible e preparar acesso SSH
         run: |
-          VM_IP="${{ steps.terraform.outputs.vm_ip }}"
 
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
@@ -67,6 +66,5 @@ jobs:
 
       - name: Executar Ansible Playbook diretamente com IP
         run: |
-          VM_IP="${{ steps.terraform.outputs.vm_ip }}"
           cd ansible
           ansible-playbook playbook.yml --user=ubuntu --private-key=~/.ssh/id_rsa -i "$VM_IP,"
