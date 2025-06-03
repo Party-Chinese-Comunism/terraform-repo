@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -45,47 +46,27 @@ jobs:
             -var "public_key_path=~/.ssh/id_rsa.pub"
 
       - name: Terraform Apply and extract VM IP
+        id: terraform
         run: |
           cd terraform
-          terraform apply -auto-approve planfile
-          
-          # Extrai o endereço IP da VM
-          VM_IP=$(terraform output -raw vm_ip | head -1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
-          echo "IP limpo: $VM_IP"
-          echo "$VM_IP" > ../vm_ip.txt
-      
-      - name: Confirmar conteúdo de vm_ip.txt
-        run: |
-          echo "Verificando existência e conteúdo do arquivo vm_ip.txt..."
-          ls -l vm_ip.txt
-          echo "Conteúdo:"
-          cat vm_ip.txt
-      
-      - name: Aguardar SSH da VM ficar disponível (Ajustar a espera)
-        run: |
-          VM_IP=$(cat vm_ip.txt)
-          for i in {1..60}; do
-            if nc -z $VM_IP 22; then
-              echo "SSH disponível em $VM_IP"
-              break
-            fi
-            echo "Aguardando SSH em $VM_IP:22... ($i/60)"
-            sleep 10  # Aguardar 10 segundos entre as tentativas
-          done
+          terraform apply -auto-approve planfile | tee ../apply.log
 
+          VM_IP=$(terraform output -raw vm_ip | tr -d '\r')
+          echo "IP extraído com sucesso: $VM_IP"
+          echo "::set-output name=vm_ip::$VM_IP"
 
       - name: Instalar Ansible e preparar acesso SSH
         run: |
-          VM_IP=$(cat vm_ip.txt)
-          
+          VM_IP="${{ steps.terraform.outputs.vm_ip }}"
+
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
-          
-          # Adicionar o IP ao known_hosts
-          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts
 
-      - name: Executar Ansible Playbook
+          echo "Adicionando $VM_IP ao known_hosts..."
+          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts || true
+
+      - name: Executar Ansible Playbook diretamente com IP
         run: |
-          VM_IP=$(cat vm_ip.txt)
+          VM_IP="${{ steps.terraform.outputs.vm_ip }}"
           cd ansible
           ansible-playbook playbook.yml --user=ubuntu --private-key=~/.ssh/id_rsa -i "$VM_IP,"
