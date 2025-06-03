@@ -68,7 +68,12 @@ jobs:
       - name: Executar Ansible Playbook diretamente com IP
         run: |
           cd ansible
+          echo "Usando chave privada:"
+          ls -l /home/runner/.ssh/id_rsa || echo "Chave não encontrada"
+          echo "Conectando à VM $VM_IP"
+      
           ansible-playbook playbook.yml \
+            -i "$VM_IP," \
             --user=ubuntu \
-            --private-key=/home/runner/.ssh/id_rsa \
-            -i "$VM_IP,"
+            --private-key="/home/runner/.ssh/id_rsa" \
+            -vvvv
