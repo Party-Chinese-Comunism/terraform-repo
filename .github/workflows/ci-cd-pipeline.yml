@@ -66,4 +66,4 @@ jobs:
       - name: Executar Ansible Playbook diretamente com IP
         run: |
           cd ansible
-          ansible-playbook playbook.yml --user=ubuntu --private-key=/home/runner/.ssh/id_rsa -i "$VM_IP,"
+          ansible-playbook playbook.yml --user=ubuntu --private-key=/home/ubuntu/.ssh/id_rsa -i "$VM_IP,"
