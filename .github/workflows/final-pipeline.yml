@@ -3,7 +3,7 @@ name: CI/CD Pipeline for Terraform and Ansible
 on:
   push:
     branches:
-      - lucas-teste
+      - lucas
 
 jobs:
   deploy:
@@ -57,23 +57,3 @@ jobs:
           IP=$(terraform output -raw vm_ip | tr -d '\r')
           echo "VM_IP=$IP" >> $GITHUB_ENV
           echo "IP da VM: $IP"
-
-      - name: Instalar Ansible e preparar acesso SSH
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ansible sshpass
-          echo "Adicionando $VM_IP ao known_hosts..."
-          ssh-keyscan -H "$VM_IP" >> ~/.ssh/known_hosts || true
-
-      - name: Executar Ansible Playbook diretamente com IP
-        run: |
-          cd ansible
-          echo "Usando chave privada:"
-          ls -l /home/runner/.ssh/id_rsa || echo "Chave não encontrada"
-          echo "Conectando à VM $VM_IP"
-      
-          ansible-playbook playbook.yml \
-            -i "$VM_IP," \
-            -e ansible_user=ubuntu \
-            -e ansible_ssh_private_key_file=/home/runner/.ssh/id_rsa \
-            -vvvv
