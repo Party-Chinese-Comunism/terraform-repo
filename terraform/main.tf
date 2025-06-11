@@ -7,7 +7,7 @@ provider "google" {
 
 resource "google_container_cluster" "primary" {
   name     = "meu-cluster-gke-autopilot"
-  location = var.region  
+  location = var.zone
 
 
   initial_node_count = 1 
