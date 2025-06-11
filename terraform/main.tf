@@ -1,53 +1,51 @@
 provider "google" {
+  credentials = file("/Users/lucasquadros/Desktop/terra/terraform-repo/terraform/terra-461323-6f30c61d88f0.json")
   project     = var.project_id
   region      = var.region
-  zone        = var.zone
-  credentials = file(var.credentials_file_path)
 }
 
+resource "google_container_cluster" "primary" {
+  name     = "meu-cluster-gke"
+  location = var.zone
 
-resource "google_compute_instance" "vm_instance" {
-  name         = "dev-vm"
-  machine_type = var.machine_type  
-  zone         = var.zone         
+  remove_default_node_pool = true
+  initial_node_count       = 1 
 
-  boot_disk {
-    initialize_params {
-      image = var.image         
-      size  = var.disk_size       
+  network    = "default"
+  subnetwork = "default"
+
+}
+
+resource "google_container_node_pool" "primary_nodes" {
+  name     = "primary-node-pool"
+  location = var.zone
+  cluster  = google_container_cluster.primary.name
+
+  node_config {
+    machine_type = var.machine_type
+    disk_size_gb = 10
+    disk_type    = "pd-standard"  
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
+    metadata = {
+      ssh-keys = "ubuntu:${file(var.public_key_path)}"
     }
+    tags = ["ssh", "app"]
   }
 
-  network_interface {
-    network = "default"
-    access_config {}
-  }
-
-  metadata = {
-    ssh-keys = "ubuntu:${file(var.public_key_path)}"  
-  }
-
-  tags = ["ssh", "app"]
+  initial_node_count = 1  
 }
 
-#resource "google_compute_firewall" "allow_ssh_http" {
-  #name    = "allow-ssh-http"
-  #network = "default"
-
-  #allow {
-    #protocol = "tcp"
-    #ports    = ["22", "80", "3000", "8000"]
-  #}
-
-  #source_ranges = ["0.0.0.0/0"]
-  #target_tags   = ["ssh", "app"]
-
-  #lifecycle {
-    #ignore_changes = [
-      #source_ranges,
-      #target_tags,
-      #allow,
-    #]
-  #}
-#}
-
+# resource "google_compute_firewall" "allow_ssh_http" {
+#   name    = "allow-ssh-http"
+#   network = "default"
+#
+#   allow {
+#     protocol = "tcp"
+#     ports    = ["22", "80", "3000", "8000", "9090", "5000"]
+#   }
+#
+#   source_ranges = ["0.0.0.0/0"]
+#   target_tags   = ["ssh", "app"]
+# }
