@@ -7,14 +7,16 @@ provider "google" {
 
 resource "google_container_cluster" "primary" {
   name     = "meu-cluster-gke-autopilot"
-  location = var.region 
-  autopilot = true  
+  location = var.region  
 
 
+  initial_node_count = 1 
+  remove_default_node_pool = true  
+
+  # Rede e sub-rede onde o cluster será criado (se necessário, altere conforme sua configuração de rede)
   network    = "default"
   subnetwork = "default"
 
-  enable_network_policy = true  
 }
 
 output "cluster_name" {
