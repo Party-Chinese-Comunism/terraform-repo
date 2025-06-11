@@ -36,8 +36,7 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            -var "cluster_name=prod-cluster"
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
         run: |
