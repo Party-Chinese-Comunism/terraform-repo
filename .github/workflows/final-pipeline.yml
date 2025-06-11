@@ -37,18 +37,19 @@ jobs:
           cd terraform
           terraform init
 
-      - name: Terraform Plan
+      - name: Terraform Apply
         run: |
           cd terraform
-          terraform plan -out=planfile \
+          terraform apply -auto-approve \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
             -var "public_key_path=/home/runner/.ssh/id_rsa.pub" \
-            -var "machine_type=e2-medium" \
+            -var "machine_type=e2-small" \
             -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
             -var "disk_size=10"
+      
 
       - name: Terraform Apply and export VM IP
         run: |
