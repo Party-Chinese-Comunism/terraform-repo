@@ -24,18 +24,16 @@ resource "google_container_node_pool" "primary_nodes" {
   node_config {
     machine_type = var.machine_type
     disk_size_gb = 10
-    disk_type    = "pd-standard"  
+    disk_type    = "pd-standard"
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]
-    metadata = {
-      ssh-keys = "ubuntu:${file(var.public_key_path)}"
-    }
     tags = ["ssh", "app"]
   }
 
-  initial_node_count = 1  
+  initial_node_count = 1
 }
+
 
 # resource "google_compute_firewall" "allow_ssh_http" {
 #   name    = "allow-ssh-http"
