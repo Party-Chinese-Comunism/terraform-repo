@@ -1,5 +1,5 @@
 provider "google" {
-  credentials = file("/Users/lucasquadros/Desktop/terra/terraform-repo/terraform/terra-461323-6f30c61d88f0.json")
+  credentials = file(var.credentials_file_path)
   project     = var.project_id
   region      = var.region
 }
