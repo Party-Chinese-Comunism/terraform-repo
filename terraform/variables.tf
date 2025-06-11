@@ -12,7 +12,7 @@ variable "zone" {
 variable "machine_type" {
   description = "Tipo da máquina para os nós do cluster"
   type        = string
-  default     = "e2-small"
+  default     = "e2-medium"
 }
 
 variable "region" {
