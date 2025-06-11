@@ -3,37 +3,25 @@ variable "project_id" {
   type        = string
 }
 
-variable "region" {
-  description = "A região do GCP"
-  default     = "us-central1"
-}
-
 variable "zone" {
-  description = "A zona do GCP"
+  description = "Zona da GCP (ex: us-central1-a)"
+  type        = string
   default     = "us-central1-a"
 }
 
+
 variable "machine_type" {
-  description = "Tipo da máquina para a instância"
-  default     = "e2-medium"
+  description = "Tipo da máquina para os nós do cluster"
+  default     = "e2-small"
+}
+variable "region" {
+  description = "Região da GCP (ex: us-central1)"
+  type        = string
+  default     = "us-west1"
 }
 
-variable "image" {
-  description = "Imagem do sistema operacional"
-  default     = "ubuntu-os-cloud/ubuntu-2204-lts"
-}
-
-variable "disk_size" {
-  description = "Tamanho do disco da instância"
-  default     = 20
-}
 
 variable "public_key_path" {
   description = "Caminho para a chave pública SSH"
-  default     = "~/.ssh/id_rsa.pub"  
-}
-
-variable "credentials_file_path" {
-  description = "Caminho para o arquivo de credenciais do Google Cloud"
-  type        = string
+  default     = "~/.ssh/id_rsa.pub"
 }
