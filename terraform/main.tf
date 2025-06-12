@@ -28,7 +28,6 @@ resource "google_container_node_pool" "primary_nodes" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]
-    tags = ["ssh", "app"]
   }
 
   initial_node_count = 1
