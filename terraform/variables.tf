@@ -18,7 +18,7 @@ variable "machine_type" {
 variable "region" {
   description = "Região da GCP (ex: us-central1)"
   type        = string
-  default     = "us-west1"
+  default     = "us-central1"
 }
 
 variable "public_key_path" {
@@ -42,9 +42,4 @@ variable "disk_size" {
 variable "credentials_file_path" {
   description = "Caminho para o arquivo de credenciais do GCP"
   type        = string
-}
-
-variable "region" {
-  type    = string
-  default = "us-central1"  # ou southamerica-east1, etc.
 }
