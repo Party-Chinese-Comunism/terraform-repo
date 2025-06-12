@@ -77,6 +77,10 @@ jobs:
           mkdir -p k8s-manifests
           gsutil -m cp -r gs://blog-iris-hml/manifests/* ./k8s-manifests
 
-      - name: Apply manifests to cluster
+      - name: Apply namespaces first
+        run: |
+          kubectl apply --validate=false -f ./k8s-manifests/namespace
+
+      - name: Apply remaining manifests
         run: |
           kubectl apply -R --validate=false -f ./k8s-manifests
