@@ -5,10 +5,9 @@ provider "google" {
 }
 
 resource "google_container_cluster" "primary" {
-  name     = "cluster-hml"
-  location = var.zone
-
-  enable_autopilot = true  # Habilita o modo Autopilot
+  name               = "cluster-hml"
+  location           = var.region
+  enable_autopilot   = true
 
   network    = "default"
   subnetwork = "default"
