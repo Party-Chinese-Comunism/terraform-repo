@@ -80,6 +80,7 @@ jobs:
       - name: Apply namespaces first
         run: |
           kubectl apply --validate=false -f ./k8s-manifests/namespace
+          sleep 5
 
       - name: Apply remaining manifests
         run: |
