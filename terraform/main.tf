@@ -11,4 +11,9 @@ resource "google_container_cluster" "primary" {
 
   network    = "default"
   subnetwork = "default"
+
+    timeouts {
+    create = "30m"
+    delete = "20m"
+  }
 }
