@@ -17,6 +17,7 @@ jobs:
         run: |
           mkdir -p /home/runner/gcp_credentials
           echo "${{ secrets.GCP_CREDENTIALS_BASE64_HML }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
+          echo /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
 
       - name: Set up Terraform
@@ -33,7 +34,7 @@ jobs:
         run: |
           cd terraform
           terraform plan -out=planfile \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
             -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"

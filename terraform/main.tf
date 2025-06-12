@@ -5,7 +5,7 @@ provider "google" {
 }
 
 resource "google_container_cluster" "primary" {
-  name     = "meu-cluster-gke-hml"
+  name     = "cluster-hml"
   location = var.zone
 
   remove_default_node_pool = true
