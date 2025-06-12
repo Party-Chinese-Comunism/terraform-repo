@@ -22,7 +22,7 @@ jobs:
       - name: Set up gcloud and get GKE credentials 
         run: |
           gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID_HML }}
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
           gcloud container clusters get-credentials $CLUSTER_NAME --region ${{ secrets.GCP_REGION }}
 
       - name: Download Kubernetes manifests from GCS
