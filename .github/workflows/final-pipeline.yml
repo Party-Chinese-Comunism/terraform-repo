@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      REGION: ${{ secrets.GCP_REGION }}
 
     steps:
       - name: Checkout repository
@@ -19,17 +21,41 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
 
-      - name: Set up gcloud and get GKE credentials 
+      - name: Configure kubectl manually (secure & plugin-free)
         run: |
           gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud container clusters get-credentials ${{ secrets.CLUSTER_NAME }} --zone ${{ secrets.GCP_ZONE }}
+
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          CLUSTER_ENDPOINT=$(gcloud container clusters describe meu-cluster-gke-autopilot \
+            --region $REGION \
+            --format="value(endpoint)")
+
+          CLUSTER_CA=$(gcloud container clusters describe meu-cluster-gke-autopilot \
+            --region $REGION \
+            --format="value(masterAuth.clusterCaCertificate)")
+
+          echo "$CLUSTER_CA" | base64 -d > /tmp/ca.crt
+
+          kubectl config set-cluster gke-cluster \
+            --server=https://$CLUSTER_ENDPOINT \
+            --certificate-authority=/tmp/ca.crt
+
+          kubectl config set-credentials gke-user --token=$ACCESS_TOKEN
+          kubectl config set-context gke-context \
+            --cluster=gke-cluster --user=gke-user
+          kubectl config use-context gke-context
+
 
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
           gsutil -m cp -r gs://blog-iris-hml/manifests/* ./k8s-manifests
 
-      - name: Apply manifests to cluster
+      - name: Apply namespaces first
         run: |
-          kubectl apply -f ./k8s-manifests
+          kubectl apply --validate=false -f ./k8s-manifests/namespace
+
+      - name: Apply remaining manifests
+        run: |
+          kubectl apply -R --validate=false -f ./k8s-manifests
