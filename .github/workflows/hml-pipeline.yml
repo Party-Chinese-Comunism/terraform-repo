@@ -36,7 +36,6 @@ jobs:
           terraform plan -out=planfile \
             -var "project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
