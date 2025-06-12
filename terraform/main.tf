@@ -5,15 +5,10 @@ provider "google" {
 }
 
 resource "google_container_cluster" "primary" {
-  name               = "cluster-hml1"
+  name               = "cluster-hml-central"
   location           = var.region
   enable_autopilot   = true
 
   network    = "default"
   subnetwork = "default"
-
-    timeouts {
-    create = "30m"
-    delete = "20m"
-  }
 }
