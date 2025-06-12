@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      REGION: ${{ secrets.GCP_REGION_HML }}
 
     steps:
       - name: Checkout repository
@@ -34,7 +36,7 @@ jobs:
           cd terraform
           terraform plan -out=planfile \
             -var "project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
-            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "region=$REGION" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
@@ -51,11 +53,11 @@ jobs:
 
           ACCESS_TOKEN=$(gcloud auth print-access-token)
           CLUSTER_ENDPOINT=$(gcloud container clusters describe $CLUSTER_NAME \
-            --region ${{ secrets.GCP_REGION }} \
+            --region $REGION \
             --format="value(endpoint)")
 
           CLUSTER_CA=$(gcloud container clusters describe $CLUSTER_NAME \
-            --region ${{ secrets.GCP_REGION }} \
+            --region $REGION \
             --format="value(masterAuth.clusterCaCertificate)")
 
           kubectl config set-cluster gke-cluster \
