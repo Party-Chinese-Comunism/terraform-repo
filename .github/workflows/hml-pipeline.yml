@@ -16,7 +16,7 @@ jobs:
       - name: Set up GCP credentials (from base64)
         run: |
           mkdir -p /home/runner/gcp_credentials
-          echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS_BASE64_HML }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
 
       - name: Set up Terraform
@@ -54,7 +54,7 @@ jobs:
       - name: Download manifests from GCS
         run: |
           mkdir -p k8s-manifests
-          gsutil -m cp -r gs://blog-iris-prod/* ./k8s-manifests
+          gsutil -m cp -r gs://blog-iris-hml* ./manifests
 
       - name: Apply manifests to cluster
         run: |
