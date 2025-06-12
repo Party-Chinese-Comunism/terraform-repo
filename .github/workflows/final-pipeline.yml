@@ -49,12 +49,18 @@ jobs:
             -var "machine_type=e2-small" \
             -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
             -var "disk_size=10"
-      
 
-      - name: Terraform Apply and export VM IP
+      - name: Set up gcloud and get GKE credentials
         run: |
-          cd terraform
-          terraform apply -auto-approve planfile
-          IP=$(terraform output -raw vm_ip | tr -d '\r')
-          echo "VM_IP=$IP" >> $GITHUB_ENV
-          echo "IP da VM: $IP"
+          gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID_HML }}
+          gcloud container clusters get-credentials $CLUSTER_NAME --region ${{ secrets.GCP_REGION }}
+
+      - name: Download Kubernetes manifests from GCS
+        run: |
+          mkdir -p k8s-manifests
+          gsutil -m cp -r gs://blog-iris-hml/manifests/* ./k8s-manifests
+
+      - name: Apply manifests to cluster
+        run: |
+          kubectl apply -f ./k8s-manifests
