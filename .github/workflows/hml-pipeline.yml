@@ -58,4 +58,4 @@ jobs:
 
       - name: Apply manifests to cluster
         run: |
-          kubectl apply -R -f ./k8s-manifests
+          kubectl apply -R --validate=false -f ./k8s-manifests
