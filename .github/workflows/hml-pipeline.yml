@@ -60,14 +60,17 @@ jobs:
             --region $REGION \
             --format="value(masterAuth.clusterCaCertificate)")
 
+          echo "$CLUSTER_CA" | base64 -d > /tmp/ca.crt
+
           kubectl config set-cluster gke-cluster \
             --server=https://$CLUSTER_ENDPOINT \
-            --certificate-authority=<(echo "$CLUSTER_CA" | base64 -d)
+            --certificate-authority=/tmp/ca.crt
 
           kubectl config set-credentials gke-user --token=$ACCESS_TOKEN
           kubectl config set-context gke-context \
             --cluster=gke-cluster --user=gke-user
           kubectl config use-context gke-context
+
 
       - name: Download Kubernetes manifests from GCS
         run: |
