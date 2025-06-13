@@ -3,13 +3,13 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - developer
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      REGION: ${{ secrets.GCP_REGION }}
+      REGION: ${{ secrets.GCP_REGION_HML }}
 
     steps:
       - name: Checkout repository
