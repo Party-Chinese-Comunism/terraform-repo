@@ -71,7 +71,6 @@ jobs:
             --cluster=gke-cluster --user=gke-user
           kubectl config use-context gke-context
 
-
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
@@ -82,21 +81,6 @@ jobs:
           kubectl apply --validate=false -f ./k8s-manifests/namespace
           sleep 5
 
-      - name: Apply remaining manifests
+      - name: Apply all manifests (incluindo Ingress com IP fixo)
         run: |
           kubectl apply -R --validate=false -f ./k8s-manifests
-        
-      - name: Get Ingress IP and apply Ingress
-        run: |
-          # Espera até o Ingress IP estar disponível
-          for i in {1..10}; do
-            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
-            if [[ -n "$IP" ]]; then break; fi
-            echo "Aguardando IP externo do Ingress..."
-            sleep 10
-          done
-
-          echo "Ingress IP: $IP"
-
-          sed "s/__INGRESS_IP__/$IP/" ./k8s-manifests/ingress/ingress-template.yaml > ./k8s-manifests/ingress/ingress.yaml
-          kubectl apply -f ./k8s-manifests/ingress/ingress.yaml
