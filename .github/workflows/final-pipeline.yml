@@ -3,7 +3,7 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - lucas
+      - lucasa
 
 jobs:
   deploy:
@@ -90,7 +90,7 @@ jobs:
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
-          gsutil -m cp -r gs://blog-iris-hml/manifests/* ./k8s-manifests
+          gsutil -m cp -r gs://blog-iris-prod/manifests/* ./k8s-manifests
 
       - name: Apply namespaces first
         run: |
