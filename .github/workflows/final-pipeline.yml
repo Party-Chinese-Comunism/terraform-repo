@@ -1,13 +1,15 @@
-name: CI/CD Pipeline for Terraform and Ansible
+name: Provision GKE Cluster and Deploy Manifests
 
 on:
   push:
     branches:
-      - lucas
+      - developer
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      REGION: ${{ secrets.GCP_REGION }}
 
     steps:
       - name: Checkout repository
@@ -19,14 +21,6 @@ jobs:
           echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
 
-      - name: Gerar par de chaves SSH para acesso à VM
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keygen -t rsa -b 4096 -C "ci-terraform" -f ~/.ssh/id_rsa -N ""
-          chmod 600 ~/.ssh/id_rsa
-          chmod 644 ~/.ssh/id_rsa.pub
-          echo "Chave SSH gerada com sucesso"
-
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -37,24 +31,94 @@ jobs:
           cd terraform
           terraform init
 
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan -out=planfile \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "region=$REGION" \
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+
       - name: Terraform Apply
         run: |
           cd terraform
-          terraform apply -auto-approve \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "region=${{ secrets.GCP_REGION }}" \
-            -var "zone=${{ secrets.GCP_ZONE }}" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            -var "public_key_path=/home/runner/.ssh/id_rsa.pub" \
-            -var "machine_type=e2-small" \
-            -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
-            -var "disk_size=10"
-      
-
-      - name: Terraform Apply and export VM IP
-        run: |
-          cd terraform
           terraform apply -auto-approve planfile
-          IP=$(terraform output -raw vm_ip | tr -d '\r')
-          echo "VM_IP=$IP" >> $GITHUB_ENV
-          echo "IP da VM: $IP"
+          CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
+          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
+
+      - name: Configure kubectl manually (secure & plugin-free)
+        run: |
+          gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          CLUSTER_ENDPOINT=$(gcloud container clusters describe $CLUSTER_NAME \
+            --region $REGION \
+            --format="value(endpoint)")
+
+          CLUSTER_CA=$(gcloud container clusters describe $CLUSTER_NAME \
+            --region $REGION \
+            --format="value(masterAuth.clusterCaCertificate)")
+
+          echo "$CLUSTER_CA" | base64 -d > /tmp/ca.crt
+
+          kubectl config set-cluster gke-cluster \
+            --server=https://$CLUSTER_ENDPOINT \
+            --certificate-authority=/tmp/ca.crt
+
+          kubectl config set-credentials gke-user --token=$ACCESS_TOKEN
+          kubectl config set-context gke-context \
+            --cluster=gke-cluster --user=gke-user
+          kubectl config use-context gke-context
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Add NGINX Ingress Controller Helm repository
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+
+      - name: Install NGINX Ingress Controller
+        run: |
+          helm install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx --create-namespace \
+            --set controller.service.type=LoadBalancer \
+            --set controller.service.externalTrafficPolicy=Local
+          echo "NGINX Ingress Controller installation initiated."
+
+      # - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
+      #   run: |
+      #     kubectl wait --namespace ingress-nginx \
+      #       --for=condition=ready service/ingress-nginx-controller \
+      #       --timeout=60s
+
+      - name: Download Kubernetes manifests from GCS
+        run: |
+          mkdir -p k8s-manifests
+          gsutil -m cp -r gs://blog-iris-prod/manifests/* ./k8s-manifests
+
+      - name: Apply namespaces first
+        run: |
+          kubectl apply --validate=false -f ./k8s-manifests/namespace
+          sleep 5
+
+      - name: Get NGINX Ingress Controller IP and apply Ingress
+        run: |
+          for i in {1..10}; do
+            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+            if [[ -n "$IP" ]]; then break; fi
+            echo "Esperando IP externo do LoadBalancer..."
+            sleep 10
+          done
+          echo "IP externo do Ingress Controller: $IP"
+
+          sed "s/__INGRESS_IP__/$IP/" ./k8s-manifests/ingress/ingress.yaml > ./k8s-manifests/ingress/ingress-final.yaml
+          kubectl apply -f ./k8s-manifests/ingress/ingress-final.yaml
+
+      - name: Apply remaining manifests
+        run: |
+          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" | while read file; do
+            echo "Applying $file"
+            kubectl apply -f "$file"
+          done
