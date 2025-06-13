@@ -10,3 +10,8 @@ variable "region" {
 variable "credentials_file_path" {
   type = string
 }
+
+variable "zone" {
+  type        = string
+  description = "The GCP zone to create the cluster in"
+}
