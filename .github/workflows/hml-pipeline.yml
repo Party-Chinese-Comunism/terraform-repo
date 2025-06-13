@@ -87,11 +87,11 @@ jobs:
             --set controller.service.externalTrafficPolicy=Local
           echo "NGINX Ingress Controller installation initiated."
 
-      - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
-        run: |
-          kubectl wait --namespace ingress-nginx \
-            --for=condition=ready service/ingress-nginx-controller \
-            --timeout=300s
+      # - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
+      #   run: |
+      #     kubectl wait --namespace ingress-nginx \
+      #       --for=condition=ready service/ingress-nginx-controller \
+      #       --timeout=60s
 
       - name: Download Kubernetes manifests from GCS
         run: |
