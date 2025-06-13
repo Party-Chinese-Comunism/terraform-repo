@@ -1,6 +1,6 @@
 ---
 - name: Configurar VM e fazer deploy da aplicação
-  hosts: web
+  hosts: all
   become: true
 
   tasks:

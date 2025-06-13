@@ -1,0 +1,60 @@
+name: CI/CD Pipeline for Terraform and Ansible
+
+on:
+  push:
+    branches:
+      - lucas
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up GCP credentials (from base64)
+        run: |
+          mkdir -p /home/runner/gcp_credentials
+          echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
+          chmod 600 /home/runner/gcp_credentials/credentials.json
+
+      - name: Gerar par de chaves SSH para acesso à VM
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keygen -t rsa -b 4096 -C "ci-terraform" -f ~/.ssh/id_rsa -N ""
+          chmod 600 ~/.ssh/id_rsa
+          chmod 644 ~/.ssh/id_rsa.pub
+          echo "Chave SSH gerada com sucesso"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Initialize Terraform
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "region=${{ secrets.GCP_REGION }}" \
+            -var "zone=${{ secrets.GCP_ZONE }}" \
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
+            -var "public_key_path=/home/runner/.ssh/id_rsa.pub" \
+            -var "machine_type=e2-small" \
+            -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
+            -var "disk_size=10"
+      
+
+      - name: Terraform Apply and export VM IP
+        run: |
+          cd terraform
+          terraform apply -auto-approve planfile
+          IP=$(terraform output -raw vm_ip | tr -d '\r')
+          echo "VM_IP=$IP" >> $GITHUB_ENV
+          echo "IP da VM: $IP"

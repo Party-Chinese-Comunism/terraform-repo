@@ -1,0 +1,14 @@
+
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+inventory.ini
+terra-461323-6f30c61d88f0.json
+terraform/.terraform/
+
+
+*.bak
+*.log
+.DS_Store
+
+*.pem

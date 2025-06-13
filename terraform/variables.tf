@@ -1,5 +1,12 @@
-variable "project_id" {}
-variable "region"     { default = "us-central1" }
-variable "zone"       { default = "us-central1-a" }
-variable "credentials_file" {}
-variable "env"        { default = "dev" }
+variable "project_id" {
+  type = string
+}
+
+variable "region" {
+  type    = string
+  default = "us-central1"
+}
+
+variable "credentials_file_path" {
+  type = string
+}
