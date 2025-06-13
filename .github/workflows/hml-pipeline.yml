@@ -71,6 +71,46 @@ jobs:
             --cluster=gke-cluster --user=gke-user
           kubectl config use-context gke-context
 
+            - name: Install Helm
+        uses: azure/setup-helm@v3 # Esta action instala o Helm CLI no runner
+
+      - name: Add NGINX Ingress Controller Helm repository
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+
+      - name: Install NGINX Ingress Controller
+        run: |
+          # O namespace 'ingress-nginx' será criado automaticamente se não existir
+          helm install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx --create-namespace \
+            --set controller.service.type=LoadBalancer \
+            --set controller.service.loadBalancerIP="$STATIC_IP" \ 
+            --set controller.service.externalTrafficPolicy=Local 
+          echo "NGINX Ingress Controller installation initiated. Waiting for LoadBalancer IP..."
+
+      - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
+        run: |
+          # Espera até que o serviço LoadBalancer do NGINX Ingress Controller tenha um IP externo
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready service/ingress-nginx-controller \
+            --timeout=300s
+
+      - name: Get NGINX Ingress Controller IP and apply Ingress
+        run: |
+          # Pega o IP externo atribuído automaticamente pelo GCP
+          for i in {1..10}; do
+            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+            if [[ -n "$IP" ]]; then break; fi
+            echo "Esperando IP externo do LoadBalancer..."
+            sleep 10
+          done
+          echo "IP externo do Ingress Controller: $IP"
+
+          # Substitui o placeholder no template e aplica o Ingress real
+          sed "s/__INGRESS_IP__/$IP/" ./k8s-manifests/ingress/ingress.yaml > ./k8s-manifests/ingress/ingress-final.yaml
+          kubectl apply -f ./k8s-manifests/ingress/ingress.yaml
+
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
