@@ -5,7 +5,7 @@ provider "google" {
 }
 
 resource "google_container_cluster" "primary" {
-  name               = "cluster-hml-central"
+  name               = "cluster-prod-central"
   location           = var.region
   enable_autopilot   = true
 
