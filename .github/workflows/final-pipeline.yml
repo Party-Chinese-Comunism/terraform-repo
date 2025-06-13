@@ -3,13 +3,13 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - developer
+      - lucas
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      REGION: ${{ secrets.GCP_REGION_HML }}
+      ZONE: ${{ secrets.GCP_ZONE }}
 
     steps:
       - name: Checkout repository
@@ -18,7 +18,7 @@ jobs:
       - name: Set up GCP credentials (from base64)
         run: |
           mkdir -p /home/runner/gcp_credentials
-          echo "${{ secrets.GCP_CREDENTIALS_BASE64_HML }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
+          echo "${{ secrets.GCP_CREDENTIALS_BASE64 }}" | base64 -d > /home/runner/gcp_credentials/credentials.json
           chmod 600 /home/runner/gcp_credentials/credentials.json
 
       - name: Set up Terraform
@@ -35,8 +35,8 @@ jobs:
         run: |
           cd terraform
           terraform plan -out=planfile \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
-            -var "region=$REGION" \
+            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "zone=$ZONE" \
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
@@ -49,15 +49,15 @@ jobs:
       - name: Configure kubectl manually (secure & plugin-free)
         run: |
           gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID_HML }}
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
           ACCESS_TOKEN=$(gcloud auth print-access-token)
           CLUSTER_ENDPOINT=$(gcloud container clusters describe $CLUSTER_NAME \
-            --region $REGION \
+            --zone $ZONE \
             --format="value(endpoint)")
 
           CLUSTER_CA=$(gcloud container clusters describe $CLUSTER_NAME \
-            --region $REGION \
+            --zone $ZONE \
             --format="value(masterAuth.clusterCaCertificate)")
 
           echo "$CLUSTER_CA" | base64 -d > /tmp/ca.crt
@@ -86,12 +86,6 @@ jobs:
             --set controller.service.type=LoadBalancer \
             --set controller.service.externalTrafficPolicy=Local
           echo "NGINX Ingress Controller installation initiated."
-
-      # - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
-      #   run: |
-      #     kubectl wait --namespace ingress-nginx \
-      #       --for=condition=ready service/ingress-nginx-controller \
-      #       --timeout=60s
 
       - name: Download Kubernetes manifests from GCS
         run: |
