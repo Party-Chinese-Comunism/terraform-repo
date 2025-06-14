@@ -37,8 +37,20 @@ jobs:
       - name: Terraform Import existing static IP (optional)
         run: |
           cd terraform
+          export TF_VAR_project_id="${{ secrets.GCP_PROJECT_ID_HML }}"
+          export TF_VAR_region="${{ secrets.GCP_REGION_HML }}"
+          export TF_VAR_credentials_file_path="/home/runner/gcp_credentials/credentials.json"
+
           terraform import google_compute_address.ingress_ip \
             projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || true
+
+      - name: Terraform Refresh (sync imported IP)
+        run: |
+          cd terraform
+          terraform refresh \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
+            -var="region=${{ secrets.GCP_REGION_HML }}" \
+            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply (Cluster + IP)
         run: |
