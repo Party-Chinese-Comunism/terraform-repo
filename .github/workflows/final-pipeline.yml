@@ -83,6 +83,14 @@ jobs:
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm repo update
 
+      - name: Download ingress-nginx-values.yaml from GCS
+        run: |
+          gsutil cp gs://blog-iris-prod/manifests/ingress/ingress-nginx-values.yaml ./k8s-manifests/ingress/ingress-nginx-values.yaml
+
+      - name: Download ingress-final.yaml from GCS
+        run: |
+          gsutil cp gs://blog-iris-prod/manifests/ingress/ingress-final.yaml ./k8s-manifests/ingress/ingress-final.yaml
+
       - name: Install NGINX Ingress Controller
         run: |
           helm install ingress-nginx ingress-nginx/ingress-nginx \
