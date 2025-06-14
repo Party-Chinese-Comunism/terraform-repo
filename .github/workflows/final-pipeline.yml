@@ -29,10 +29,12 @@ jobs:
 
       - name: Initialize Terraform
         run: |
+          cd terraform
           terraform init
 
       - name: Terraform Plan
         run: |
+          cd terraform
           terraform plan -out=planfile \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=$REGION" \
@@ -41,6 +43,7 @@ jobs:
 
       - name: Terraform Apply
         run: |
+          cd terraform
           terraform apply -auto-approve planfile
           CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
           INGRESS_IP=$(terraform output -raw ingress_ip_address)
