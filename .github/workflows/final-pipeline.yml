@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGION: ${{ secrets.GCP_REGION_HML }}
-      STATIC_IP: ${{ secrets.STATIC_IP }}  # Defina o secret aqui
-
+      STATIC_IP: ${{ secrets.STATIC_IP }}  
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -36,7 +35,7 @@ jobs:
           terraform -chdir=terraform plan -out=planfile \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=$REGION" \
-            -var "static_ip=$STATIC_IP" \
+            -var "static_ip=$STATIC_IP" \  # Passando o IP Estático
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
@@ -45,7 +44,7 @@ jobs:
           CLUSTER_NAME=$(terraform -chdir=terraform output -raw cluster_name | tr -d '\r')
           INGRESS_IP=$(terraform -chdir=terraform output -raw ingress_ip_address)
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-          echo "INGRESS_IP=****" >> $GITHUB_ENV  
+          echo "INGRESS_IP=****" >> $GITHUB_ENV  # Mascarando o IP por segurança
 
       - name: Configure kubectl manually (secure & plugin-free)
         run: |
