@@ -3,4 +3,6 @@ output "cluster_name" {
   value       = google_container_cluster.primary.name
 }
 
-
+output "ingress_static_ip" {
+  value = google_compute_address.ingress_ip.address
+}

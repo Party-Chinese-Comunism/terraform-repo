@@ -12,3 +12,30 @@ resource "google_container_cluster" "primary" {
   network    = "default"
   subnetwork = "default"
 }
+
+provider "helm" {
+  kubernetes {
+    host                   = google_container_cluster.primary.endpoint
+    token                  = data.google_client_config.default.access_token
+    cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
+  }
+}
+
+
+resource "helm_release" "nginx_ingress" {
+  name             = "ingress-nginx"
+  chart            = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  namespace        = "ingress-nginx"
+  create_namespace = true
+
+  set {
+    name  = "controller.service.loadBalancerIP"
+    value = google_compute_address.ingress_ip.address
+  }
+
+  set {
+    name  = "controller.service.externalTrafficPolicy"
+    value = "Local"
+  }
+}
