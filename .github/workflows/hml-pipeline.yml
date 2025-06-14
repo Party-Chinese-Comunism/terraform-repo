@@ -99,6 +99,21 @@ jobs:
           kubectl apply --validate=false -f ./k8s-manifests/namespace
           sleep 5
 
+      - name: Add ingress-nginx Helm repo
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+
+      - name: Install ingress-nginx with static IP
+        run: |
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace app --create-namespace \
+            -f k8s-manifests/ingress-nginx-values.yaml
+
+      - name: Apply ingress rules
+        run: |
+          kubectl apply -f k8s-manifests/ingress.yaml
+
       - name: Apply remaining manifests
         run: |
           find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" | while read file; do

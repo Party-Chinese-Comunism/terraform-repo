@@ -4,6 +4,11 @@ provider "google" {
   region      = var.region
 }
 
+data "google_compute_address" "ingress_ip" {
+  name   = "ingress-static-ip"
+  region = var.region
+}
+
 resource "google_container_cluster" "primary" {
   name             = "cluster-hml-central"
   location         = var.region
@@ -11,9 +16,4 @@ resource "google_container_cluster" "primary" {
 
   network    = "default"
   subnetwork = "default"
-}
-
-resource "google_compute_address" "ingress_ip" {
-  name   = "ingress-static-ip"
-  region = var.region
 }
