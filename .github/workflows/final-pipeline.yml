@@ -87,7 +87,7 @@ jobs:
         run: |
           helm install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx --create-namespace \
-            -f ./k8s-manifests/ingress-nginx-values.yaml  
+            -f ./k8s-manifests/ingress/ingress-nginx-values.yaml 
 
       - name: Download Kubernetes manifests from GCS
         run: |
