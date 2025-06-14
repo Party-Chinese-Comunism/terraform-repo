@@ -1,25 +1,4 @@
-provider "google" {
-  credentials = file(var.credentials_file_path)
-  project     = var.project_id
-  region      = var.region
-}
-
-resource "google_container_cluster" "primary" {
-  name             = "cluster-hml-central"
-  location         = var.region
-  enable_autopilot = true
-
-  network    = "default"
-  subnetwork = "default"
-}
-
 data "google_client_config" "default" {}
-
-resource "google_compute_address" "ingress_ip" {
-  name   = "ingress-static-ip"
-  region = var.region
-}
-
 
 provider "helm" {
   alias = "gke"
@@ -29,7 +8,6 @@ provider "helm" {
     cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
   }
 }
-
 
 resource "helm_release" "nginx_ingress" {
   count    = var.enable_ingress ? 1 : 0

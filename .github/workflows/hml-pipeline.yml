@@ -26,7 +26,7 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform Init
+      - name: Terraform Init (Cluster + IP)
         run: |
           cd terraform
           terraform init \
@@ -34,35 +34,34 @@ jobs:
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
-      - name: Import existing static IP (optional, skip if already imported)
+      - name: Terraform Import existing static IP (optional)
         run: |
           cd terraform
-          terraform import \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
-            -var="region=${{ secrets.GCP_REGION_HML }}" \
-            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
-            google_compute_address.ingress_ip \
+          terraform import google_compute_address.ingress_ip \
             projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || true
 
-          terraform refresh \
+      - name: Terraform Apply (Cluster + IP)
+        run: |
+          cd terraform
+          terraform apply -auto-approve \
+            -target=google_container_cluster.primary \
+            -target=google_compute_address.ingress_ip \
             -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
-
-      - name: Terraform Plan
+      - name: Terraform Apply (Ingress Helm)
         run: |
           cd terraform
-          terraform plan -out=planfile \
+          terraform apply -auto-approve \
             -var="enable_ingress=true" \
             -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
-      - name: Terraform Apply
+      - name: Extract Cluster Name
         run: |
           cd terraform
-          terraform apply -auto-approve planfile
           CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
 
