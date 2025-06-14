@@ -30,6 +30,12 @@ jobs:
         run: |
           cd terraform
           terraform init
+      
+      - name: Import existing IP to Terraform state
+        run: |
+          cd terraform
+          terraform import google_compute_address.ingress_ip \
+            projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip
 
       - name: Terraform Plan
         run: |
