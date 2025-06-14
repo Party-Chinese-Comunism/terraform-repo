@@ -112,7 +112,7 @@ jobs:
 
       - name: Apply ingress rules
         run: |
-          kubectl apply -f k8s-manifests/ingress.yaml
+          kubectl apply -f k8s-manifests/ingress/ingress.yaml
 
       - name: Apply remaining manifests
         run: |
