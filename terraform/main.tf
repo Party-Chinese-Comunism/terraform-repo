@@ -4,13 +4,11 @@ provider "google" {
   region      = var.region
 }
 
-# Criação do IP Estático
-resource "google_compute_address" "ingress_ip" {
-  name   = "ingress-static-ip"
-  region = var.region
+variable "static_ip" {
+  description = "O endereço IP estático a ser usado no cluster"
+  type        = string
 }
 
-# Criação do Cluster GKE
 resource "google_container_cluster" "primary" {
   name               = "cluster-prod-central"
   location           = var.region
@@ -19,25 +17,15 @@ resource "google_container_cluster" "primary" {
   network    = "default"
   subnetwork = "default"
 
-  node_pool {
-    name       = "default-node-pool"
-    location   = var.region
-    initial_node_count = 3
-    node_config {
-      machine_type = "e2-medium"
-    }
 
-    # Usando tags para habilitar tráfego HTTP e HTTPS
-    tags = ["http-server", "https-server"]
-  }
-
-
-  endpoint = google_compute_address.ingress_ip.address
+  endpoint = var.static_ip
 }
+
 
 output "ingress_ip_address" {
-  value = google_compute_address.ingress_ip.address
+  value = var.static_ip
 }
+
 
 output "cluster_name" {
   value = google_container_cluster.primary.name
