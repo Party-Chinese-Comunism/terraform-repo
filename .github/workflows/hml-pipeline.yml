@@ -26,7 +26,7 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform Init (Cluster + IP)
+      - name: Terraform Init
         run: |
           cd terraform
           terraform init \
@@ -42,34 +42,21 @@ jobs:
           export TF_VAR_credentials_file_path="/home/runner/gcp_credentials/credentials.json"
 
           terraform import google_compute_address.ingress_ip \
-            projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || true
+            projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || echo "IP already imported"
 
-      - name: Terraform Refresh (sync imported IP)
+      - name: Terraform Plan
         run: |
           cd terraform
-          terraform refresh \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
-            -var="region=${{ secrets.GCP_REGION_HML }}" \
-            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
-
-      - name: Terraform Apply (Cluster + IP)
-        run: |
-          cd terraform
-          terraform apply -auto-approve \
-            -target=google_container_cluster.primary \
-            -target=google_compute_address.ingress_ip \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
-            -var="region=${{ secrets.GCP_REGION_HML }}" \
-            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
-
-      - name: Terraform Apply (Ingress Helm)
-        run: |
-          cd terraform
-          terraform apply -auto-approve \
+          terraform plan -out=planfile \
             -var="enable_ingress=true" \
             -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve planfile
 
       - name: Extract Cluster Name
         run: |
