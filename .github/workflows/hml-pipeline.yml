@@ -54,6 +54,7 @@ jobs:
         run: |
           cd terraform
           terraform plan -out=planfile \
+            -var="enable_ingress=true" \
             -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"

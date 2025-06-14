@@ -4,7 +4,6 @@ provider "google" {
   region      = var.region
 }
 
-# Cluster GKE com Autopilot ativado
 resource "google_container_cluster" "primary" {
   name             = "cluster-hml-central"
   location         = var.region
@@ -14,17 +13,16 @@ resource "google_container_cluster" "primary" {
   subnetwork = "default"
 }
 
-# Coleta token de autenticação para o provider helm
 data "google_client_config" "default" {}
 
-# IP fixo para uso com o Ingress NGINX
 resource "google_compute_address" "ingress_ip" {
   name   = "ingress-static-ip"
   region = var.region
 }
 
-# Provedor Helm (só funciona após o cluster existir)
+
 provider "helm" {
+  alias = "gke"
   kubernetes {
     host                   = google_container_cluster.primary.endpoint
     token                  = data.google_client_config.default.access_token
@@ -32,9 +30,11 @@ provider "helm" {
   }
 }
 
-# Instalação do Ingress NGINX, protegida com count para evitar execução antes do cluster
+
 resource "helm_release" "nginx_ingress" {
-  count            = var.enable_ingress ? 1 : 0
+  count    = var.enable_ingress ? 1 : 0
+  provider = helm.gke
+
   name             = "ingress-nginx"
   chart            = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
