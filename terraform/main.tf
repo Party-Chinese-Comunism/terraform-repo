@@ -13,6 +13,13 @@ resource "google_container_cluster" "primary" {
   subnetwork = "default"
 }
 
+data "google_client_config" "default" {}
+
+resource "google_compute_address" "ingress_ip" {
+  name   = "ingress-static-ip"
+  region = var.region
+}
+
 provider "helm" {
   kubernetes {
     host                   = google_container_cluster.primary.endpoint
