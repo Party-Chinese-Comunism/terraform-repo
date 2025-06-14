@@ -4,10 +4,6 @@ provider "google" {
   region      = var.region
 }
 
-variable "static_ip" {
-  description = "O endereço IP estático a ser usado no cluster"
-  type        = string
-}
 
 resource "google_container_cluster" "primary" {
   name               = "cluster-prod-central"
