@@ -7,8 +7,6 @@ provider "helm" {
     token                  = data.google_client_config.default.access_token
     cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
   }
-  
-  depends_on = [google_container_cluster.primary]
 }
 
 resource "helm_release" "nginx_ingress" {
@@ -30,4 +28,10 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.service.externalTrafficPolicy"
     value = "Local"
   }
+
+  # Garante que só seja aplicado após o cluster GKE e IP estarem prontos
+  depends_on = [
+    google_container_cluster.primary,
+    google_compute_address.ingress_ip
+  ]
 }
