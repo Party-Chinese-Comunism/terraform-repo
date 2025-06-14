@@ -6,7 +6,7 @@ provider "google" {
 
 resource "google_container_cluster" "primary" {
   name             = "cluster-prod-central"
-  region           = var.region  
+  location         = var.region  
   enable_autopilot = true
 
   network    = "default"
@@ -21,11 +21,9 @@ resource "google_container_cluster" "primary" {
   }
 }
 
-
 output "cluster_name" {
   value = google_container_cluster.primary.name
 }
-
 
 output "ingress_ip_address" {
   value = var.static_ip
