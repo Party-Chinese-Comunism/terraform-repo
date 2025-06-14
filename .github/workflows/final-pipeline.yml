@@ -48,7 +48,7 @@ jobs:
           CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
           INGRESS_IP=$(terraform output -raw ingress_ip_address)
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-          echo "INGRESS_IP=****" >> $GITHUB_ENV
+          echo "INGRESS_IP=$INGRESS_IP" >> $GITHUB_ENV
 
       - name: Configure kubectl manually (secure & plugin-free)
         run: |
@@ -87,9 +87,7 @@ jobs:
         run: |
           helm install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx --create-namespace \
-            --set controller.service.type=LoadBalancer \
-            --set controller.service.externalTrafficPolicy=Local
-          echo "NGINX Ingress Controller installation initiated."
+            -f ./k8s-manifests/ingress-nginx-values.yaml  
 
       - name: Download Kubernetes manifests from GCS
         run: |
@@ -101,15 +99,9 @@ jobs:
           kubectl apply --validate=false -f ./k8s-manifests/namespace
           sleep 5
 
-      - name: Get NGINX Ingress Controller IP and apply Ingress
+      - name: Apply ingress rules
         run: |
-          for i in {1..10}; do
-            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
-            if [[ -n "$IP" ]]; then break; fi
-            echo "Esperando IP externo do LoadBalancer..."
-            sleep 10
-          done
-          kubectl apply -f ./k8s-manifests/ingress/ingress-final.yaml
+          kubectl apply -f ./k8s-manifests/ingress/ingress-final.yaml  # Aplica o ingress final
 
       - name: Apply remaining manifests
         run: |
