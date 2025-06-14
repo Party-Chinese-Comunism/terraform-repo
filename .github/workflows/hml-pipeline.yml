@@ -44,6 +44,12 @@ jobs:
             google_compute_address.ingress_ip \
             projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || true
 
+          terraform refresh \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID_HML }}" \
+            -var="region=${{ secrets.GCP_REGION_HML }}" \
+            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+
+
       - name: Terraform Plan
         run: |
           cd terraform
