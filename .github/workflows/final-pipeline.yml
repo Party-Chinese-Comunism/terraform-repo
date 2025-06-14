@@ -3,13 +3,14 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - mains
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
       REGION: ${{ secrets.GCP_REGION_HML }}
+      STATIC_IP: ${{ secrets.STATIC_IP }}  
 
     steps:
       - name: Checkout repository
@@ -37,6 +38,7 @@ jobs:
           terraform plan -out=planfile \
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=$REGION" \
+            -var "static_ip=$STATIC_IP" \  
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
@@ -46,7 +48,7 @@ jobs:
           CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
           INGRESS_IP=$(terraform output -raw ingress_ip_address)
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-          echo "INGRESS_IP=$INGRESS_IP" >> $GITHUB_ENV
+          echo "INGRESS_IP=****" >> $GITHUB_ENV  # Mascarando o IP por segurança
 
       - name: Configure kubectl manually (secure & plugin-free)
         run: |
@@ -89,12 +91,6 @@ jobs:
             --set controller.service.externalTrafficPolicy=Local
           echo "NGINX Ingress Controller installation initiated."
 
-      # - name: Wait for NGINX Ingress Controller LoadBalancer to be ready
-      #   run: |
-      #     kubectl wait --namespace ingress-nginx \
-      #       --for=condition=ready service/ingress-nginx-controller \
-      #       --timeout=60s
-
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
@@ -113,9 +109,6 @@ jobs:
             echo "Esperando IP externo do LoadBalancer..."
             sleep 10
           done
-          echo "IP externo do Ingress Controller: $IP"
-
-          sed "s/__INGRESS_IP__/$IP/" ./k8s-manifests/ingress/ingress.yaml > ./k8s-manifests/ingress/ingress-final.yaml
           kubectl apply -f ./k8s-manifests/ingress/ingress-final.yaml
 
       - name: Apply remaining manifests
