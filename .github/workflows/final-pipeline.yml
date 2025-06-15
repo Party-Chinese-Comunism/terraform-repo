@@ -3,14 +3,12 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - main
-
+      - maina
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
       REGION: ${{ secrets.GCP_REGION_HML }}
-      STATIC_IP: ${{ secrets.STATIC_IP }}
 
     steps:
       - name: Checkout repository
@@ -27,28 +25,36 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Initialize Terraform
+      - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          terraform init \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="region=${{ secrets.GCP_REGION_HML }}" \
+            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+
+      - name: Static IP handled via data source (no import needed)
+        run: echo "IP is already reserved in GCP and referenced via data.google_compute_address"
 
       - name: Terraform Plan
         run: |
           cd terraform
           terraform plan -out=planfile \
-            -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "region=$REGION" \
-            -var "static_ip=$STATIC_IP" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+            -var="enable_ingress=true" \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="region=${{ secrets.GCP_REGION_HML }}" \
+            -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
       - name: Terraform Apply
         run: |
           cd terraform
           terraform apply -auto-approve planfile
+
+      - name: Extract Cluster Name
+        run: |
+          cd terraform
           CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
-          INGRESS_IP=$(terraform output -raw ingress_ip_address)
           echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
-          echo "INGRESS_IP=$INGRESS_IP" >> $GITHUB_ENV
 
       - name: Configure kubectl manually (secure & plugin-free)
         run: |
@@ -75,33 +81,6 @@ jobs:
             --cluster=gke-cluster --user=gke-user
           kubectl config use-context gke-context
 
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-
-      - name: Add NGINX Ingress Controller Helm repository
-        run: |
-          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-          helm repo update
-
-      - name: Download ingress-nginx-values.yaml from GCS
-        run: |
-          gsutil cp gs://blog-iris-prod/manifests/ingress/ingress-nginx-values.yaml ./k8s-manifests/ingress/ingress-nginx-values.yaml
-
-      - name: Download ingress-final.yaml from GCS
-        run: |
-          gsutil cp gs://blog-iris-prod/manifests/ingress/ingress-final.yaml ./k8s-manifests/ingress/ingress-final.yaml
-
-      - name: Install NGINX Ingress Controller
-        run: |
-          helm install ingress-nginx ingress-nginx/ingress-nginx \
-            --namespace ingress-nginx --create-namespace \
-            -f ./k8s-manifests/ingress/ingress-nginx-values.yaml  # Usando o arquivo de valores no Helm
-
-      - name: Wait for NGINX Ingress Controller to be ready
-        run: |
-          kubectl wait --namespace ingress-nginx \
-            --for=condition=ready pod -l app.kubernetes.io/name=ingress-nginx --timeout=120s
-
       - name: Download Kubernetes manifests from GCS
         run: |
           mkdir -p k8s-manifests
@@ -112,13 +91,28 @@ jobs:
           kubectl apply --validate=false -f ./k8s-manifests/namespace
           sleep 5
 
+      - name: Add ingress-nginx Helm repo
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+
+      - name: Install ingress-nginx with static IP
+        run: |
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace app --create-namespace \
+            -f k8s-manifests/ingress/ingress-nginx-values.yaml
+
+      - name: Wait for ingress-nginx controller to be ready
+        run: |
+          kubectl rollout status deployment ingress-nginx-controller -n app --timeout=120s
+
       - name: Apply ingress rules
         run: |
-          kubectl apply -f ./k8s-manifests/ingress/ingress-final.yaml  # Aplica o ingress final
+          kubectl apply -f k8s-manifests/ingress/ingress.yaml
 
       - name: Apply remaining manifests
         run: |
-          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" | while read file; do
+          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" ! -name "ingress-nginx-values.yaml" | while read file; do
             echo "Applying $file"
             kubectl apply -f "$file"
           done
