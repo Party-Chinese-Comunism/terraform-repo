@@ -95,7 +95,7 @@ jobs:
         run: |
           helm install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx --create-namespace \
-            -f ./k8s-manifests/ingress/ingress-nginx-values.yaml 
+            -f ./k8s-manifests/ingress/ingress-nginx-values.yaml  # Usando o arquivo de valores no Helm
 
       - name: Wait for NGINX Ingress Controller to be ready
         run: |
