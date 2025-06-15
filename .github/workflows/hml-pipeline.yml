@@ -34,15 +34,8 @@ jobs:
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
-      - name: Terraform Import existing static IP (optional)
-        run: |
-          cd terraform
-          export TF_VAR_project_id="${{ secrets.GCP_PROJECT_ID_HML }}"
-          export TF_VAR_region="${{ secrets.GCP_REGION_HML }}"
-          export TF_VAR_credentials_file_path="/home/runner/gcp_credentials/credentials.json"
-
-          terraform import google_compute_address.ingress_ip \
-            projects/${{ secrets.GCP_PROJECT_ID_HML }}/regions/${{ secrets.GCP_REGION_HML }}/addresses/ingress-static-ip || echo "IP already imported"
+      - name: Static IP handled via data source (no import needed)
+        run: echo "IP is already reserved in GCP and referenced via data.google_compute_address"
 
       - name: Terraform Plan
         run: |
@@ -109,6 +102,10 @@ jobs:
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace app --create-namespace \
             -f k8s-manifests/ingress/ingress-nginx-values.yaml
+
+      - name: Wait for ingress-nginx controller to be ready
+        run: |
+          kubectl rollout status deployment ingress-nginx-controller -n app --timeout=120s
 
       - name: Apply ingress rules
         run: |
