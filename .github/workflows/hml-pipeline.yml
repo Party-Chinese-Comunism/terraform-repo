@@ -113,7 +113,7 @@ jobs:
 
       - name: Apply remaining manifests
         run: |
-          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" ! -name "ingress-nginx-values.yaml" | while read file; do
+          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" ! -name "ingress-nginx-values.yaml" ! -name "ingress-prometheus-grafana.yaml" | while read file; do
             echo "Applying $file"
             kubectl apply -f "$file"
           done
