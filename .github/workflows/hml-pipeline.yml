@@ -107,16 +107,21 @@ jobs:
         run: |
           kubectl rollout status deployment ingress-nginx-controller -n app --timeout=120s
 
-      - name: Apply all ingress manifests (excluding Helm values)
+      - name: Apply ingress (frontend/backend)
         run: |
-          find k8s-manifests/ingress -type f -name "*.yaml" ! -name "ingress-nginx-values.yaml" | while read file; do
-            echo "Applying $file"
-            kubectl apply -f "$file"
-          done
+          kubectl apply -f k8s-manifests/ingress/ingress.yaml
+
+      - name: Apply ingress (grafana/prometheus)
+        run: |
+          kubectl apply -f k8s-manifests/ingress/ingress-prometheus-grafana.yaml
 
       - name: Apply remaining manifests
         run: |
-          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" ! -name "ingress-nginx-values.yaml" ! -name "ingress-prometheus-grafana.yaml" | while read file; do
-            echo "Applying $file"
-            kubectl apply -f "$file"
+          find ./k8s-manifests -type f -name "*.yaml" \
+            ! -name "ingress.yaml" \
+            ! -name "ingress-final.yaml" \
+            ! -name "ingress-nginx-values.yaml" \
+            ! -name "ingress-prometheus-grafana.yaml" | while read file; do
+              echo "Applying $file"
+              kubectl apply -f "$file"
           done
