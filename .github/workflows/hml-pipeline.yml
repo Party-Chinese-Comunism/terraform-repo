@@ -107,9 +107,12 @@ jobs:
         run: |
           kubectl rollout status deployment ingress-nginx-controller -n app --timeout=120s
 
-      - name: Apply ingress rules
+      - name: Apply all ingress manifests (excluding Helm values)
         run: |
-          kubectl apply -f k8s-manifests/ingress/ingress.yaml
+          find k8s-manifests/ingress -type f -name "*.yaml" ! -name "ingress-nginx-values.yaml" | while read file; do
+            echo "Applying $file"
+            kubectl apply -f "$file"
+          done
 
       - name: Apply remaining manifests
         run: |
