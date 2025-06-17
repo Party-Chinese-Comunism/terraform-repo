@@ -1,8 +1,14 @@
-provider "google" {
-  credentials = file(var.credentials_file_path)
-  project     = var.project_id
-  region      = var.region
+terraform {
+  backend "gcs" {}
 }
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+  zone    = var.zone
+  credentials = file(var.credentials_file_path)
+}
+
 
 data "google_client_config" "default" {}
 
@@ -14,18 +20,23 @@ provider "helm" {
   }
 }
 
-data "google_compute_address" "ingress_ip" {
-  name   = "ingress-static-ip"
-  region = var.region
-}
-
 resource "google_container_cluster" "primary" {
-  name             = "cluster-hml-central"
-  location         = var.region
-  enable_autopilot = true
+  name     = var.cluster_name
+  location = var.region
 
-  network    = "default"
-  subnetwork = "default"
+  deletion_protection = false
+
+  initial_node_count = var.cluster_size
+
+  node_config {
+    machine_type = var.machine_type
+    disk_type = "pd-standard"
+    disk_size_gb = 50
+
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
+  }
 }
 
 resource "helm_release" "kube_prometheus_stack" {
@@ -33,9 +44,9 @@ resource "helm_release" "kube_prometheus_stack" {
   namespace        = "monitoring"
   create_namespace = true
 
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  version    = "57.0.2"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  version          = "57.0.2"
 
   set {
     name  = "grafana.adminPassword"
@@ -50,47 +61,6 @@ resource "helm_release" "kube_prometheus_stack" {
   set {
     name  = "prometheus.service.type"
     value = "LoadBalancer"
-  }
-
-  set {
-    name  = "kube-state-metrics.enabled"
-    value = "true" # Mantenha este, é importante
-  }
-
-  set {
-    name  = "nodeExporter.enabled"
-    value = "true" # Mantenha este, é importante
-  }
-  
-  # Desabilita componentes que tentam criar recursos no kube-system
-  set {
-    name  = "kubeDns.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "kubelet.enabled"
-    value = "true" # kubelet é ok, pois o Autopilot expõe as métricas de forma segura
-  }
-  
-  set {
-    name  = "kubeEtcd.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "kubeScheduler.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "kubeProxy.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "kubeControllerManager.enabled"
-    value = "false"
   }
 
   depends_on = [google_container_cluster.primary]

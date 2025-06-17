@@ -34,9 +34,6 @@ jobs:
             -var="region=${{ secrets.GCP_REGION_HML }}" \
             -var="credentials_file_path=/home/runner/gcp_credentials/credentials.json"
 
-      - name: Static IP handled via data source (no import needed)
-        run: echo "IP is already reserved in GCP and referenced via data.google_compute_address"
-
       - name: Terraform Plan
         run: |
           cd terraform
