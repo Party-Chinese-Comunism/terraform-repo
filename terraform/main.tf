@@ -17,9 +17,9 @@ output "cluster_name" {
   value = google_container_cluster.primary.name
 }
 
-output "ingress_ip_address" {
-  value = var.static_ip
-}
+#output "ingress_ip_address" {
+#  value = var.static_ip
+#}
 
 # Configuração do provedor do Google
 data "google_client_config" "default" {}
