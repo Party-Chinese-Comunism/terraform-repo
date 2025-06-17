@@ -6,8 +6,8 @@ provider "google" {
 
 resource "google_container_cluster" "primary" {
   name             = "cluster-prod-central"
-  location         = var.region
-  enable_autopilot = true
+  location         = var.region  
+  enable_autopilot = true  
 
   network    = "default"
   subnetwork = "default"
@@ -17,12 +17,14 @@ output "cluster_name" {
   value = google_container_cluster.primary.name
 }
 
-#output "ingress_ip_address" {
-#  value = var.static_ip
-#}
+output "ingress_ip_address" {
+  value = var.static_ip
+}
 
+# Configuração do provedor do Google
 data "google_client_config" "default" {}
 
+# Configuração do provedor Helm para Kubernetes
 provider "helm" {
   kubernetes {
     host                   = google_container_cluster.primary.endpoint
@@ -31,14 +33,15 @@ provider "helm" {
   }
 }
 
+# Release do Grafana e Prometheus
 resource "helm_release" "kube_prometheus_stack" {
   name             = "observability"
   namespace        = "monitoring"
   create_namespace = true
 
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  version    = "57.0.2"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  version          = "57.0.2"
 
   set {
     name  = "grafana.adminPassword"
@@ -65,7 +68,7 @@ resource "helm_release" "kube_prometheus_stack" {
     name  = "kube-state-metrics.enabled"
     value = "false"
   }
-  # --- FIM DO AJUSTE ---
+
 
   depends_on = [google_container_cluster.primary]
 }
