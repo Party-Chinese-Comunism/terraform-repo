@@ -3,7 +3,7 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - main
+      - maina
 
 jobs:
   deploy:
@@ -57,7 +57,7 @@ jobs:
       - name: Configurar acesso kubectl
         run: |
           gcloud components install gke-gcloud-auth-plugin
-          gcloud container clusters get-credentials stage --region us-central1 --project ${{ secrets.GCP_PROJECT_ID_STAGE }}
+          gcloud container clusters get-credentials stage --region us-central1 --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Mostrar serviços monitoring
         run: |
