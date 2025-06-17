@@ -10,3 +10,8 @@ variable "region" {
 variable "credentials_file_path" {
   type = string
 }
+
+variable "enable_ingress" {
+  type    = bool
+  default = false
+}
