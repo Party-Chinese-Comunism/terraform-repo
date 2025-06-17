@@ -44,59 +44,12 @@ resource "helm_release" "kube_prometheus_stack" {
 
   set {
     name  = "grafana.service.type"
-    value = "ClusterIP"
+    value = "LoadBalancer"
   }
 
   set {
-    name  = "grafana.ingress.enabled"
-    value = "true"
-  }
-
-  set {
-    name  = "grafana.ingress.path"
-    value = "/grafana"
-  }
-
-  set {
-    name  = "grafana.ingress.ingressClassName"
-    value = "nginx"
-  }
-
-  set {
-    name  = "grafana.ingress.annotations.nginx.ingress.kubernetes.io/rewrite-target"
-    value = "/$1"
-    type  = "string"
-  }
-
-  set {
-    name  = "grafana.ingress.pathType"
-    value = "ImplementationSpecific"
-  }
-
-  set {
-    name  = "prometheus.ingress.enabled"
-    value = "true"
-  }
-
-  set {
-    name  = "prometheus.ingress.path"
-    value = "/prometheus"
-  }
-
-  set {
-    name  = "prometheus.ingress.ingressClassName"
-    value = "nginx"
-  }
-
-  set {
-    name  = "prometheus.ingress.annotations.nginx.ingress.kubernetes.io/rewrite-target"
-    value = "/$1"
-    type  = "string"
-  }
-
-  set {
-    name  = "prometheus.ingress.pathType"
-    value = "ImplementationSpecific"
+    name  = "prometheus.service.type"
+    value = "LoadBalancer"
   }
 
   # GKE Autopilot-safe configuration
