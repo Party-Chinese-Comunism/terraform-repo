@@ -38,11 +38,12 @@ jobs:
             -var "project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var "region=us-central1" \
             -var "zone=us-central1-a" \
-            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json"
+            -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
             -var "machine_type=e2-medium" \
             -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
-            -var "cluster_size=1" \
-            -var "cluster_name=stage" \
+            -var "cluster_size=1" \ 
+            -var "cluster_name=stage" 
+      
 
       - name: Terraform Apply
         run: |
