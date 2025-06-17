@@ -115,9 +115,17 @@ jobs:
         run: |
           kubectl apply -f k8s-manifests/ingress/ingress-prometheus-grafana.yaml
 
-      - name: Apply remaining manifests
+      - name: Apply PersistentVolumeClaims
+        run: |
+          find ./k8s-manifests -type f -name "*pvc.yaml" | while read file; do
+            echo "Applying PVC $file"
+            kubectl apply -f "$file"
+          done
+
+      - name: Apply remaining manifests (excluding ingress & PVCs)
         run: |
           find ./k8s-manifests -type f -name "*.yaml" \
+            ! -name "*pvc.yaml" \
             ! -name "ingress.yaml" \
             ! -name "ingress-final.yaml" \
             ! -name "ingress-nginx-values.yaml" \
