@@ -1,40 +1,31 @@
 provider "google" {
-  credentials = file(var.credentials_file_path)
-  project     = var.project_id
-  region      = var.region
+  credentials = file("./credentials.json")
+  project     = "seu-projeto-gcp-aqui"
+  region      = "us-central1"
 }
 
 resource "google_container_cluster" "primary" {
-  name             = "cluster-prod-central2"
-  location         = var.region  
-  enable_autopilot = true  
-
-  network    = "default"
-  subnetwork = "default"
+  name             = "cluster-prod-central"
+  location         = "us-central1"
+  enable_autopilot = true
+  network          = "default"
+  subnetwork       = "default"
 }
 
-output "cluster_name" {
-  value = google_container_cluster.primary.name
-}
-
-# Configuração do provedor do Google
 data "google_client_config" "default" {}
 
-# Configuração do provedor Helm para Kubernetes
 provider "helm" {
   kubernetes {
-    host                   = google_container_cluster.primary.endpoint
+    host                   = "https://{google_container_cluster.primary.endpoint}"
     token                  = data.google_client_config.default.access_token
     cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
   }
 }
 
-# Release do Grafana e Prometheus
 resource "helm_release" "kube_prometheus_stack" {
   name             = "observability"
   namespace        = "monitoring"
   create_namespace = true
-
   repository       = "https://prometheus-community.github.io/helm-charts"
   chart            = "kube-prometheus-stack"
   version          = "57.0.2"
@@ -54,10 +45,19 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "LoadBalancer"
   }
 
+  set {
+    name  = "prometheus-node-exporter.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kube-state-metrics.enabled"
+    value = "false"
+  }
+
   depends_on = [google_container_cluster.primary]
 }
 
-# Output opcional de ingress_ip_address, pode ser descomentado se necessário
-# output "ingress_ip_address" {
-#   value = var.static_ip
-# }
+output "cluster_name" {
+  value = google_container_cluster.primary.name
+}
