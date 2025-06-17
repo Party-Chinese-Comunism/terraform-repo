@@ -63,7 +63,7 @@ resource "helm_release" "kube_prometheus_stack" {
   }
 
   set {
-    name  = "grafana.ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/rewrite-target"
+    name  = "grafana.ingress.annotations.nginx\.ingress\.kubernetes\.io/rewrite-target"
     value = "/$1"
   }
 
@@ -88,13 +88,54 @@ resource "helm_release" "kube_prometheus_stack" {
   }
 
   set {
-    name  = "prometheus.ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/rewrite-target"
+    name  = "prometheus.ingress.annotations.nginx\.ingress\.kubernetes\.io/rewrite-target"
     value = "/$1"
   }
 
   set {
     name  = "prometheus.ingress.pathType"
     value = "ImplementationSpecific"
+  }
+
+  # GKE Autopilot-safe configuration
+  set {
+    name  = "defaultRules.create"
+    value = "false"
+  }
+
+  set {
+    name  = "kubelet.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "coreDns.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "nodeExporter.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeControllerManager.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeScheduler.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeProxy.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeEtcd.enabled"
+    value = "false"
   }
 
   depends_on = [google_container_cluster.primary]
