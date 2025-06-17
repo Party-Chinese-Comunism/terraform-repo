@@ -1,30 +1,17 @@
+terraform {
+  backend "gcs" {}
+}
+
 provider "google" {
+  project = var.project_id
+  region  = var.region
+  zone    = var.zone
   credentials = file(var.credentials_file_path)
-  project     = var.project_id
-  region      = var.region
 }
 
-resource "google_container_cluster" "primary" {
-  name             = "cluster-prod-central"
-  location         = var.region  
-  enable_autopilot = true  
 
-  network    = "default"
-  subnetwork = "default"
-}
-
-output "cluster_name" {
-  value = google_container_cluster.primary.name
-}
-
-#output "ingress_ip_address" {
-#  value = var.static_ip
-#}
-
-# Configuração do provedor do Google
 data "google_client_config" "default" {}
 
-# Configuração do provedor Helm para Kubernetes
 provider "helm" {
   kubernetes {
     host                   = google_container_cluster.primary.endpoint
@@ -33,7 +20,25 @@ provider "helm" {
   }
 }
 
-# Release do Grafana e Prometheus
+resource "google_container_cluster" "primary" {
+  name     = var.cluster_name
+  location = var.region
+
+  deletion_protection = false
+
+  initial_node_count = var.cluster_size
+
+  node_config {
+    machine_type = var.machine_type
+    disk_type = "pd-standard"
+    disk_size_gb = 50
+
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
+  }
+}
+
 resource "helm_release" "kube_prometheus_stack" {
   name             = "observability"
   namespace        = "monitoring"
@@ -57,18 +62,6 @@ resource "helm_release" "kube_prometheus_stack" {
     name  = "prometheus.service.type"
     value = "LoadBalancer"
   }
-
-
-  set {
-    name  = "prometheus-node-exporter.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "kube-state-metrics.enabled"
-    value = "false"
-  }
-
 
   depends_on = [google_container_cluster.primary]
 }
