@@ -54,14 +54,7 @@ jobs:
           echo "CLUSTER_ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
           echo "Endpoint do cluster: $ENDPOINT"
           
-      - name: Configurar acesso kubectl
-        run: |
-          gcloud components install gke-gcloud-auth-plugin
-          gcloud container clusters get-credentials stage --region us-central1 --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Mostrar serviços monitoring
-        run: |
-          kubectl get svc -n monitoring
+  
 
 
       - name: Extract Cluster Name
