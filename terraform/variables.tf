@@ -13,11 +13,6 @@ variable "cluster_size" {
   description = "tamanho do cluster"
 }
 
-variable "bucket_name" {
-  type = string
-  description = "nome do bucket"
-}
-
 variable "region" {
   default = "us-central1"
 }
