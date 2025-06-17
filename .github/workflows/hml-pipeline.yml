@@ -41,8 +41,9 @@ jobs:
             -var "credentials_file_path=/home/runner/gcp_credentials/credentials.json" \
             -var "machine_type=e2-medium" \
             -var "image=ubuntu-os-cloud/ubuntu-2204-lts" \
-            -var "cluster_size=1" \ 
-            -var "cluster_name=stage" 
+            -var "cluster_size=1" \
+            -var "cluster_name=stage"
+
       
 
       - name: Terraform Apply
