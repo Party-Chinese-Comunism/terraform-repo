@@ -33,9 +33,9 @@ resource "helm_release" "kube_prometheus_stack" {
   namespace        = "monitoring"
   create_namespace = true
 
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
-  version          = "57.0.2"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  version    = "57.0.2"
 
   set {
     name  = "grafana.adminPassword"
@@ -50,6 +50,47 @@ resource "helm_release" "kube_prometheus_stack" {
   set {
     name  = "prometheus.service.type"
     value = "LoadBalancer"
+  }
+
+  set {
+    name  = "kube-state-metrics.enabled"
+    value = "true" # Mantenha este, é importante
+  }
+
+  set {
+    name  = "nodeExporter.enabled"
+    value = "true" # Mantenha este, é importante
+  }
+  
+  # Desabilita componentes que tentam criar recursos no kube-system
+  set {
+    name  = "kubeDns.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubelet.enabled"
+    value = "true" # kubelet é ok, pois o Autopilot expõe as métricas de forma segura
+  }
+  
+  set {
+    name  = "kubeEtcd.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeScheduler.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeProxy.enabled"
+    value = "false"
+  }
+
+  set {
+    name  = "kubeControllerManager.enabled"
+    value = "false"
   }
 
   depends_on = [google_container_cluster.primary]
