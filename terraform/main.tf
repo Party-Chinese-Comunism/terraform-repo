@@ -63,7 +63,7 @@ resource "helm_release" "kube_prometheus_stack" {
   }
 
   set {
-    name  = "grafana.ingress.annotations.nginx\.ingress\.kubernetes\.io/rewrite-target"
+    name  = "grafana.ingress.annotations.\"nginx.ingress.kubernetes.io/rewrite-target\""
     value = "/$1"
   }
 
@@ -88,7 +88,7 @@ resource "helm_release" "kube_prometheus_stack" {
   }
 
   set {
-    name  = "prometheus.ingress.annotations.nginx\.ingress\.kubernetes\.io/rewrite-target"
+    name  = "prometheus.ingress.annotations.\"nginx.ingress.kubernetes.io/rewrite-target\""
     value = "/$1"
   }
 
