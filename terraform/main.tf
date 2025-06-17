@@ -28,16 +28,6 @@ resource "google_container_cluster" "primary" {
   subnetwork = "default"
 }
 
-data "google_client_config" "default" {}
-
-provider "helm" {
-  kubernetes {
-    host                   = google_container_cluster.primary.endpoint
-    token                  = data.google_client_config.default.access_token
-    cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
-  }
-}
-
 resource "helm_release" "kube_prometheus_stack" {
   name             = "observability"
   namespace        = "monitoring"
