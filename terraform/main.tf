@@ -17,10 +17,6 @@ output "cluster_name" {
   value = google_container_cluster.primary.name
 }
 
-#output "ingress_ip_address" {
-#  value = var.static_ip
-#}
-
 # Configuração do provedor do Google
 data "google_client_config" "default" {}
 
@@ -60,3 +56,8 @@ resource "helm_release" "kube_prometheus_stack" {
 
   depends_on = [google_container_cluster.primary]
 }
+
+# Output opcional de ingress_ip_address, pode ser descomentado se necessário
+# output "ingress_ip_address" {
+#   value = var.static_ip
+# }
