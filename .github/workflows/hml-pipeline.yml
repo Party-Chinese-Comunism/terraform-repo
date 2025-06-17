@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      REGION: ${{ secrets.GCP_REGION_HML }}
+      REGION: us-central1
 
     steps:
       - name: Checkout repository
@@ -64,4 +64,60 @@ jobs:
           kubectl get svc -n monitoring
 
 
-    
+      - name: Extract Cluster Name
+        run: |
+          cd terraform
+          CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
+          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
+          
+      - name: Configure kubectl manually (secure & plugin-free)
+        run: |
+          gcloud auth activate-service-account --key-file=/home/runner/gcp_credentials/credentials.json
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          CLUSTER_ENDPOINT=$(gcloud container clusters describe $CLUSTER_NAME \
+            --region $REGION \
+            --format="value(endpoint)")
+          CLUSTER_CA=$(gcloud container clusters describe $CLUSTER_NAME \
+            --region $REGION \
+            --format="value(masterAuth.clusterCaCertificate)")
+          echo "$CLUSTER_CA" | base64 -d > /tmp/ca.crt
+          kubectl config set-cluster gke-cluster \
+            --server=https://$CLUSTER_ENDPOINT \
+            --certificate-authority=/tmp/ca.crt
+          kubectl config set-credentials gke-user --token=$ACCESS_TOKEN
+          kubectl config set-context gke-context \
+            --cluster=gke-cluster --user=gke-user
+          kubectl config use-context gke-context
+      - name: Download Kubernetes manifests from GCS
+        run: |
+          mkdir -p k8s-manifests
+          gsutil -m cp -r gs://blog-iris-prod/manifests/* ./k8s-manifests
+      - name: Apply namespaces first
+        run: |
+          kubectl apply --validate=false -f ./k8s-manifests/namespace
+          sleep 5
+      - name: Add ingress-nginx Helm repo
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+      - name: Install ingress-nginx with static IP
+        run: |
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace app --create-namespace \
+            -f k8s-manifests/ingress/ingress-nginx-values.yaml
+      - name: Wait for ingress-nginx controller to be ready
+        run: |
+          kubectl rollout status deployment ingress-nginx-controller -n app --timeout=120s
+      - name: Apply all ingress manifests (excluding Helm values)
+        run: |
+          find k8s-manifests/ingress -type f -name "*.yaml" ! -name "ingress-nginx-values.yaml" | while read file; do
+            echo "Applying $file"
+            kubectl apply -f "$file"
+          done
+      - name: Apply remaining manifests
+        run: |
+          find ./k8s-manifests -type f -name "*.yaml" ! -name "ingress.yaml" ! -name "ingress-final.yaml" ! -name "ingress-nginx-values.yaml" ! -name "ingress-prometheus-grafana.yaml" | while read file; do
+            echo "Applying $file"
+            kubectl apply -f "$file"
+          done 
