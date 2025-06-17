@@ -1,22 +1,31 @@
 provider "google" {
-  credentials = file("./credentials.json")
-  project     = "seu-projeto-gcp-aqui"
-  region      = "us-central1"
+  credentials = file(var.credentials_file_path)
+  project     = var.project_id
+  region      = var.region
 }
 
 resource "google_container_cluster" "primary" {
   name             = "cluster-prod-central"
-  location         = "us-central1"
+  location         = var.region
   enable_autopilot = true
-  network          = "default"
-  subnetwork       = "default"
+
+  network    = "default"
+  subnetwork = "default"
+}
+
+output "cluster_name" {
+  value = google_container_cluster.primary.name
+}
+
+output "ingress_ip_address" {
+  value = var.static_ip
 }
 
 data "google_client_config" "default" {}
 
 provider "helm" {
   kubernetes {
-    host                   = "https://{google_container_cluster.primary.endpoint}"
+    host                   = google_container_cluster.primary.endpoint
     token                  = data.google_client_config.default.access_token
     cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
   }
@@ -26,9 +35,10 @@ resource "helm_release" "kube_prometheus_stack" {
   name             = "observability"
   namespace        = "monitoring"
   create_namespace = true
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
-  version          = "57.0.2"
+
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  version    = "57.0.2"
 
   set {
     name  = "grafana.adminPassword"
@@ -45,6 +55,7 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "LoadBalancer"
   }
 
+
   set {
     name  = "prometheus-node-exporter.enabled"
     value = "false"
@@ -54,10 +65,7 @@ resource "helm_release" "kube_prometheus_stack" {
     name  = "kube-state-metrics.enabled"
     value = "false"
   }
+  # --- FIM DO AJUSTE ---
 
   depends_on = [google_container_cluster.primary]
-}
-
-output "cluster_name" {
-  value = google_container_cluster.primary.name
 }
