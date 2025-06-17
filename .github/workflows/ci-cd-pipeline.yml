@@ -3,7 +3,7 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - maiaa
+      - maia
 
 jobs:
   deploy:
