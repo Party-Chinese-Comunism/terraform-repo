@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      REGION: ${{ secrets.GCP_REGION_HML }}
+      REGION: ${{ secrets.GCP_REGION_HML }} 
 
     steps:
       - name: Checkout repository
