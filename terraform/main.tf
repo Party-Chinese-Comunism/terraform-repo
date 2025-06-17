@@ -4,7 +4,10 @@ provider "google" {
   zone    = var.zone
   credentials = file(var.credentials_file_path)
 }
-
+data "google_compute_address" "ingress_ip" {
+  name   = "ingress-static-ip-externo"
+  region = var.region
+}
 
 data "google_client_config" "default" {}
 
