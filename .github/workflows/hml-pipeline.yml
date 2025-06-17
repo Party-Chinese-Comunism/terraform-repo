@@ -3,7 +3,7 @@ name: Provision GKE Cluster and Deploy Manifests
 on:
   push:
     branches:
-      - main
+      - maina
 
 jobs:
   deploy:
@@ -46,12 +46,13 @@ jobs:
 
       
 
-      - name: Terraform Apply
+      - name: Terraform Apply and export VM IP
         run: |
           cd terraform
           terraform apply -auto-approve planfile
-          CLUSTER_NAME=$(terraform output -raw cluster_name | tr -d '\r')
-          echo "CLUSTER_NAME=$CLUSTER_NAME" >> $GITHUB_ENV
+          ENDPOINT=$(terraform output -raw cluster_endpoint)
+          echo "CLUSTER_ENDPOINT=$ENDPOINT" >> $GITHUB_ENV
+          echo "Endpoint do cluster: $ENDPOINT"
           
       - name: Configurar acesso kubectl
         run: |
