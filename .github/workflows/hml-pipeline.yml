@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
+    env: 
       REGION: ${{ secrets.GCP_REGION_HML }} 
 
     steps:
