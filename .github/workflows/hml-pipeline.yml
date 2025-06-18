@@ -6,7 +6,7 @@ on:
       - developer
 
 jobs:
-  deploy:
+  deploy: 
     runs-on: ubuntu-latest
     env: 
       REGION: ${{ secrets.GCP_REGION_HML }} 
