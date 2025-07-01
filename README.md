@@ -1,6 +1,6 @@
 
 
-# README: Projeto de Infraestrutura Multinuvem com CI/CD - Google Cloud
+# Projeto de Infraestrutura Multinuvem com CI/CD - Google Cloud
 
 ## Visão Geral
 
